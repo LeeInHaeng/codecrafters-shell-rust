@@ -16,7 +16,7 @@ fn main() {
         let splited_command: Vec<&str> = command.split(' ').collect();
         let command = splited_command[0];
 
-        if false == COMMAND.contains(&splited_command[1]) {
+        if false == COMMAND.contains(&command) {
             println!("{}: not found", splited_command[1]);
             continue;
         }
