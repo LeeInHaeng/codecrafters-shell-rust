@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path};
+use std::{env, fs, path::Path, process::Command};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -60,10 +60,17 @@ fn command_type(args: &str) {
             continue;
         }
 
-        // If the file exists and has execute permissions, print <command> is <full_path> and stop.
-        println!("{} is {}", &args, full_display);
-        command_success = true;
-        break;
+        // execute command
+        match Command::new(full_display).output() {
+            Ok(_) => {
+                command_success = true;
+                break;
+            },
+            Err(e) => {
+                println!("{}", e);
+                break;
+            }
+        }
     }
 
     // If no executable is found in any directory, print <command>: not found.
