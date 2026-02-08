@@ -74,7 +74,7 @@ fn command_type(args: &str) {
             },
             Err(e) => {
                 println!("{}", e);
-                break;
+                continue;
             }
         }
     }
