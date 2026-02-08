@@ -75,7 +75,8 @@ fn command_type(args: &str) {
         let command_args = &splited_args[1..].join(" ");
 
         match Command::new(path_display).arg(command_args).output() {
-            Ok(_) => {
+            Ok(output) => {
+                println!("{:?}", output);
                 command_result = CommandResult::Success;
                 break;
             },
