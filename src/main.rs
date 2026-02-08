@@ -52,7 +52,7 @@ fn command_type(args: &str) {
         };
 
         // Check if the file has execute permissions.
-        if metadata.st_mode() & 0o111 != 0 {
+        if metadata.mode() & 0o111 != 0 {
             continue;
         }
 
