@@ -6,6 +6,13 @@ use is_executable::IsExecutable;
 
 const COMMAND: [&str; 3]= ["exit", "echo", "type"];
 
+#[derive(PartialEq)]
+enum CommandResult {
+    Success,
+    NotFound,
+    CommandError
+}
+
 fn main() {
     loop {
         print!("$ ");
@@ -48,7 +55,7 @@ fn command_type(args: &str) {
         return;
     };
 
-    let mut command_success = false;
+    let mut command_result = CommandResult::NotFound;
     for path in env::split_paths(&paths) {
         let full = path.join(command);
 
@@ -69,18 +76,19 @@ fn command_type(args: &str) {
 
         match Command::new(path_display).arg(command_args).output() {
             Ok(_) => {
-                command_success = true;
+                command_result = CommandResult::Success;
                 break;
             },
             Err(e) => {
                 println!("{}", e);
-                continue;
+                command_result = CommandResult::CommandError;
+                break;
             }
         }
     }
 
     // If no executable is found in any directory, print <command>: not found.
-    if false == command_success {
+    if CommandResult::NotFound == command_result {
         println!("{}: not found", &args);
     }
 }
