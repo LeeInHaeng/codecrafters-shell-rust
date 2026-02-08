@@ -74,7 +74,7 @@ fn command_type(args: &str) {
         // execute command
         match Command::new(full_display).args(&splited_args[1..]).output() {
             Ok(output) => {
-                println!("{:?}", output);
+                println!("{}", str::from_utf8(&output.stdout).unwrap());
                 command_result = CommandResult::Success;
                 break;
             },
