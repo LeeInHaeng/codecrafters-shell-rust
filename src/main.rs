@@ -33,20 +33,23 @@ fn command_echo(args: &str) {
 }
 
 fn command_type(args: &str) {
-    if COMMAND.contains(&args) {
-        println!("{} is a shell builtin", &args);
+    let splited_args: Vec<&str> = args.split(' ').collect();
+    let command = splited_args[0];
+
+    if COMMAND.contains(&command) {
+        println!("{} is a shell builtin", command);
         return;
     }
 
     // get PATH
     let Some(paths) = env::var_os("PATH") else {
-        println!("{}: not found", args);
+        println!("{}: not found", command);
         return;
     };
 
     let mut command_success = false;
     for path in env::split_paths(&paths) {
-        let full = path.join(args);
+        let full = path.join(command);
 
         // Check if a file with the command name exists.
         if fs::metadata(&full).is_err() {
@@ -61,7 +64,9 @@ fn command_type(args: &str) {
         }
 
         // execute command
-        match Command::new(full_display).arg(args).output() {
+        let command_args = &splited_args[1..].join(" ");
+
+        match Command::new(path_display).arg(command_args).output() {
             Ok(_) => {
                 command_success = true;
                 break;
