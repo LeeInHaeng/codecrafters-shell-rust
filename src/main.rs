@@ -18,11 +18,12 @@ fn main() {
         command = command.trim().to_string();
         let splited_command: Vec<&str> = command.split(' ').collect();
         let command = splited_command[0];
+        let command_args = &splited_command[1..].join(" ");
 
         match command {
             "exit" => break,
-            "echo" => command_echo( &splited_command[1..].join(" ")),
-            "type" => command_type(&splited_command[1..].join(" ")),
+            "echo" => command_echo(&command_args),
+            "type" => command_type(&command_args),
             _ => println!("{}: command not found", command)
         };
     }
