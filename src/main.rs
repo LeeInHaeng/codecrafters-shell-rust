@@ -68,7 +68,7 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     // execute command
-    match Command::new(check_command_executable_result.full_path).args(command_args.split_whitespace()).output() {
+    match Command::new(check_command_executable_result.command).args(command_args.split_whitespace()).output() {
         Ok(output) => {
             println!("{}", str::from_utf8(&output.stdout).unwrap());
         },
