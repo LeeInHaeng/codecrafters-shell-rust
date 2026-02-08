@@ -24,6 +24,10 @@ fn main() {
         
         command = command.trim().to_string();
         let splited_command: Vec<&str> = command.split(' ').collect();
+        if splited_command.is_empty() || splited_command[0].is_empty() {
+            continue;
+        }
+
         let command = splited_command[0];
         let command_args = &splited_command[1..].join(" ");
 
@@ -71,11 +75,15 @@ fn command_type(args: &str) {
             continue;
         }
 
+        println!("{} is {}", command, full_display);
+        command_result = CommandResult::Success;
+
         // execute command
+        /*
         match Command::new(full_display).args(&splited_args[1..]).output() {
             Ok(output) => {
                 println!("{}", str::from_utf8(&output.stdout).unwrap());
-                command_result = CommandResult::Success;
+                command_result = 
                 break;
             },
             Err(e) => {
@@ -84,6 +92,7 @@ fn command_type(args: &str) {
                 break;
             }
         }
+         */
     }
 
     // If no executable is found in any directory, print <command>: not found.
