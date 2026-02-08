@@ -1,3 +1,4 @@
+use std::{env, path};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -32,7 +33,24 @@ fn command_echo(args: &str) {
 fn command_type(args: &str) {
     if COMMAND.contains(&args) {
         println!("{} is a shell builtin", &args);
-    } else {
-        println!("{}: not found", args) ;
+        return;
+    }
+
+    let paths: Vec<String> = match env::var_os("PATH") {
+        Some(p) => env::split_paths(&p)
+            .map(|path| path.to_string_lossy().into_owned())
+            .collect(),
+        None => {
+            println!("{}: not found", args);
+            Vec::new()
+        }
+    };
+
+    for path in paths {
+        if false == path.contains(args) {
+            continue;
+        }
+        println!("{} is {}", &args, path);
+        break;
     }
 }
