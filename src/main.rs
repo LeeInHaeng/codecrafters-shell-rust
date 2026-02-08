@@ -1,4 +1,4 @@
-use std::{env, fs, path, process::Command};
+use std::{env, fs};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -45,14 +45,17 @@ fn command_type(args: &str) {
     let mut command_success = true;
     for path in env::split_paths(&paths) {
         let full = path.join(args);
+
+        // Check if a file with the command name exists.
         let Ok(metadata) = fs::metadata(&full) else {
             continue
         };
 
         // Check if the file has execute permissions.
-        if let Err(_) = metadata.accessed() {
-            continue
-        };
+        let permissions = metadata.permissions();
+        if permissions.readonly() {
+            continue;
+        }
 
         // If the file exists and has execute permissions, print <command> is <full_path> and stop.
         println!("{} is {}", &args, full.display());
@@ -60,6 +63,7 @@ fn command_type(args: &str) {
         break;
     }
 
+    // If no executable is found in any directory, print <command>: not found.
     if false == command_success {
         println!("{}: not found", &args);
     }
