@@ -47,7 +47,7 @@ fn command_type(args: &str) {
     };
 
     for path in paths {
-        if false == path.contains(args) {
+        if false == path.contains(&args) {
             continue;
         }
         println!("{} is {}", &args, path);
