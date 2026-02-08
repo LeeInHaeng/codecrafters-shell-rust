@@ -44,7 +44,7 @@ fn command_type(args: &str) {
         return;
     };
 
-    let mut command_success = true;
+    let mut command_success = false;
     for path in env::split_paths(&paths) {
         let full = path.join(args);
 
