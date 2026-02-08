@@ -72,9 +72,7 @@ fn command_type(args: &str) {
         }
 
         // execute command
-        let command_args = &splited_args[1..].join(" ");
-
-        match Command::new(path_display).arg(command_args).output() {
+        match Command::new(full_display).args(&splited_args[1..]).output() {
             Ok(output) => {
                 println!("{:?}", output);
                 command_result = CommandResult::Success;
