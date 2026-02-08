@@ -22,7 +22,7 @@ fn main() {
         match command {
             "exit" => break,
             "echo" => command_echo( &splited_command[1..].join(" ")),
-            "type" => command_type(splited_command[1]),
+            "type" => command_type(&splited_command[1..].join(" ")),
             _ => println!("{}: command not found", command)
         };
     }
@@ -61,7 +61,7 @@ fn command_type(args: &str) {
         }
 
         // execute command
-        match Command::new(full_display).output() {
+        match Command::new(full_display).arg(args).output() {
             Ok(_) => {
                 command_success = true;
                 break;
