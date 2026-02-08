@@ -16,11 +16,6 @@ fn main() {
         let splited_command: Vec<&str> = command.split(' ').collect();
         let command = splited_command[0];
 
-        if false == COMMAND.contains(&command) {
-            println!("{}: not found", splited_command[1]);
-            continue;
-        }
-
         match command {
             "exit" => break,
             "echo" => command_echo( &splited_command[1..].join(" ")),
@@ -35,5 +30,9 @@ fn command_echo(args: &str) {
 }
 
 fn command_type(args: &str) {
-    println!("{} is a shell builtin", args) ;
+    if COMMAND.contains(&args) {
+        println!("{} is a shell builtin", &args);
+    } else {
+        println!("{}: not found", args) ;
+    }
 }
