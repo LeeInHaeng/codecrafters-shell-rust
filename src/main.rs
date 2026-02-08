@@ -52,8 +52,7 @@ fn command_type(args: &str) {
         };
 
         // Check if the file has execute permissions.
-        let permissions = metadata.permissions();
-        if permissions.readonly() {
+        if metadata.mode() & 0o111 != 0 {
             continue;
         }
 
