@@ -1,6 +1,8 @@
-use std::{env, fs};
+use std::{env, fs, path::Path};
 #[allow(unused_imports)]
 use std::io::{self, Write};
+
+use is_executable::IsExecutable;
 
 const COMMAND: [&str; 3]= ["exit", "echo", "type"];
 
@@ -47,17 +49,19 @@ fn command_type(args: &str) {
         let full = path.join(args);
 
         // Check if a file with the command name exists.
-        let Ok(metadata) = fs::metadata(&full) else {
-            continue
-        };
+        if fs::metadata(&full).is_err() {
+            continue;
+        }
 
         // Check if the file has execute permissions.
-        if metadata.mode() & 0o111 != 0 {
+        let full_display = full.to_string_lossy().into_owned();
+        let path_display = Path::new(&full_display);
+        if false == path_display.is_executable() {
             continue;
         }
 
         // If the file exists and has execute permissions, print <command> is <full_path> and stop.
-        println!("{} is {}", &args, full.display());
+        println!("{} is {}", &args, full_display);
         command_success = true;
         break;
     }
