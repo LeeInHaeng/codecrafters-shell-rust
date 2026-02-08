@@ -1,4 +1,4 @@
-use std::{env, path, process::Command};
+use std::{env, fs, path, process::Command};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -37,39 +37,27 @@ fn command_type(args: &str) {
     }
 
     // get PATH
-    let paths: Vec<String> = match env::var_os("PATH") {
-        Some(p) => env::split_paths(&p)
-            .map(|path| path.to_string_lossy().into_owned())
-            .collect(),
-        None => {
-            println!("{}: not found", args);
-            Vec::new()
-        }
+    let Some(paths) = env::var_os("PATH") else {
+        println!("{}: not found", args);
+        return;
     };
 
-    let mut command_success = false;
-    for path in paths {
-        let last_path = match path.split('/').last() {
-            Some(v) => v,
-            None => continue
+    let mut command_success = true;
+    for path in env::split_paths(&paths) {
+        let full = path.join(args);
+        let Ok(metadata) = fs::metadata(&full) else {
+            continue
         };
-
-        if args != last_path {
-            continue;
-        }
 
         // Check if the file has execute permissions.
-        // If the file exists and has execute permissions, print <command> is <full_path> and stop.
-        // If the file exists but lacks execute permissions, skip it and continue to the next directory.
-        let command_result = Command::new(&path).output();
-        match command_result {
-            Ok(_) => {
-                println!("{} is {}", &args, &path);
-                command_success = true;
-                break;
-            },
-            Err(_) => continue
+        if let Err(_) = metadata.accessed() {
+            continue
         };
+
+        // If the file exists and has execute permissions, print <command> is <full_path> and stop.
+        println!("{} is {}", &args, full.display());
+        command_success = true;
+        break;
     }
 
     if false == command_success {
