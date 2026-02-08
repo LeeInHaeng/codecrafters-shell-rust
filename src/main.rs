@@ -6,11 +6,18 @@ use is_executable::IsExecutable;
 
 const COMMAND: [&str; 3]= ["exit", "echo", "type"];
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Default)]
 enum CommandResult {
     Success,
     NotFound,
-    CommandError
+    #[default] CommandError
+}
+
+#[derive(Default)]
+struct CommandExecutableResult {
+    pub command: String,
+    pub full_path: String,
+    pub result: CommandResult,
 }
 
 fn main() {
@@ -29,13 +36,16 @@ fn main() {
         }
 
         let command = splited_command[0];
-        let command_args = &splited_command[1..].join(" ");
+        let mut command_args = "".to_string();
+        if 1 < splited_command.len() {
+            command_args = splited_command[1..].join(" ");
+        }
 
         match command {
             "exit" => break,
             "echo" => command_echo(&command_args),
             "type" => command_type(&command_args),
-            _ => println!("{}: command not found", command)
+            _ => command_execute(command, &command_args)
         };
     }
 }
@@ -45,21 +55,59 @@ fn command_echo(args: &str) {
 }
 
 fn command_type(args: &str) {
+    let check_command_executable_result = check_command_executable(args);
+    if CommandResult::Success == check_command_executable_result.result {
+        println!("{} is {}", check_command_executable_result.command, check_command_executable_result.full_path);
+    }
+}
+
+fn command_execute(command: &str, command_args: &str) {
+    let check_command_executable_result = check_command_executable(&format!("{} {}", command, command_args).to_string());
+    if CommandResult::Success != check_command_executable_result.result {
+        return;
+    }
+
+    // execute command
+    match Command::new(check_command_executable_result.full_path).args(command_args.split_whitespace()).output() {
+        Ok(output) => {
+            println!("{}", str::from_utf8(&output.stdout).unwrap());
+        },
+        Err(e) => {
+            println!("{}", e);
+        }
+    }
+}
+
+fn check_command_executable(args: &str) -> CommandExecutableResult {
+    let mut result: CommandExecutableResult = CommandExecutableResult::default();
+
+    if args.is_empty() {
+        println!("command args error. args: {}", args);
+        return result;
+    }
+
     let splited_args: Vec<&str> = args.split(' ').collect();
+    if splited_args.is_empty() || splited_args[0].is_empty() {
+        println!("command args error. args: {}", args);
+        return result;
+    }
+
     let command = splited_args[0];
+
+    result.command = command.to_string();
+    result.result = CommandResult::NotFound;
 
     if COMMAND.contains(&command) {
         println!("{} is a shell builtin", command);
-        return;
+        return result;
     }
 
     // get PATH
     let Some(paths) = env::var_os("PATH") else {
         println!("{}: not found", command);
-        return;
+        return result;
     };
 
-    let mut command_result = CommandResult::NotFound;
     for path in env::split_paths(&paths) {
         let full = path.join(command);
 
@@ -75,28 +123,14 @@ fn command_type(args: &str) {
             continue;
         }
 
-        println!("{} is {}", command, full_display);
-        command_result = CommandResult::Success;
-
-        // execute command
-        /*
-        match Command::new(full_display).args(&splited_args[1..]).output() {
-            Ok(output) => {
-                println!("{}", str::from_utf8(&output.stdout).unwrap());
-                command_result = 
-                break;
-            },
-            Err(e) => {
-                println!("{}", e);
-                command_result = CommandResult::CommandError;
-                break;
-            }
-        }
-         */
+        result.full_path = full_display;
+        result.result = CommandResult::Success;
+        break;
     }
 
-    // If no executable is found in any directory, print <command>: not found.
-    if CommandResult::NotFound == command_result {
-        println!("{}: not found", &args);
+    if CommandResult::NotFound == result.result {
+        println!("{}: not found", command);
     }
+
+    return result;
 }
