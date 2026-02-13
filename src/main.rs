@@ -166,21 +166,20 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let file_path_args: Vec<&str> = args.split('\"')
+    let mut split_char = '\'';
+    if args.contains("'") {
+        split_char = '"';
+    }
+
+    let file_path_args: Vec<&str> = args.split(split_char)
         .filter(|s| !s.trim().is_empty() && s.trim() != " ")
         .collect();
 
     for file_path in file_path_args {
         let mut quoted_path = String::with_capacity(file_path.len() + 2);
-        if file_path.contains("'") {
-            quoted_path.push('\"');
-            quoted_path.push_str(file_path);
-            quoted_path.push('\"');
-        } else {
-            quoted_path.push('\'');
-            quoted_path.push_str(file_path);
-            quoted_path.push('\'');
-        }
+        quoted_path.push(split_char);
+        quoted_path.push_str(file_path);
+        quoted_path.push(split_char);
 
 
         quoted_path = command_args_builder(&quoted_path);
