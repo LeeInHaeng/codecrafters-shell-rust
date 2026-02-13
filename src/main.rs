@@ -53,6 +53,7 @@ fn main() {
                     "cd" => command_cd(&command_args),
                     // 해당 challenge 에서 cat 명령어가 기본적으로 있다고 하지만
                     // 윈도우 환경 에서 정상 인식이 안되기 때문에 별도 command 로 구현
+                    // 기본 cat 은 /tmp 하위로 기본 셋팅 해둔다.
                     "cat" => command_cat(&command_args),
                     _ => command_execute(command, &command_args)
                 };
@@ -84,9 +85,18 @@ fn command_args_builder(args: &str) -> String {
             before_char = args.as_bytes()[idx - 1] as char;
         }
 
-        if char == '\\' && false == is_ignore_next && false == is_quote_start {
-            is_ignore_next = true;
-            continue;
+        // 백슬래쉬에 대해 다음 나올 문자열을 무시할지 판단
+        if char == '\\' && false == is_ignore_next {
+            // 쿼터로 안묶여 있는 경우
+            if  false == is_quote_start {
+                is_ignore_next = true;
+                continue;
+            }
+            // 더블 쿼터로 묶여 있을 경우
+            if true == is_quote_start && true == is_double_quote {
+                is_ignore_next = true;
+                continue;
+            }
         }
 
         if is_ignore_next {
@@ -96,7 +106,7 @@ fn command_args_builder(args: &str) -> String {
         }
 
         if char == '\'' || char == '\"' {
-            // 이전 문자가 blackslash 일 경우 현재꺼를 담고 무시
+            // 이전 문자가 blackslash 일 경우 \'\ 가 아니면 현재꺼를 담고 무시
             if before_char == '\\' && char == '\"' {
                 result.push(char);
                 continue;
