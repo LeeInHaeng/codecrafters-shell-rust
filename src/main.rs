@@ -25,29 +25,34 @@ fn main() {
         print!("$ ");
         io::stdout().flush().unwrap();
 
+        // owned
         let mut command = String::new();
 
         io::stdin().read_line(&mut command).unwrap();
         
-        command = command.trim().to_string();
+        // borrow
+        let mut command = command.trim();
         let splited_command: Vec<&str> = command.split(' ').collect();
         if splited_command.is_empty() || splited_command[0].is_empty() {
             continue;
         }
 
-        let command = splited_command[0];
-        let mut command_args = "".to_string();
-        if 1 < splited_command.len() {
-            command_args = splited_command[1..].join(" ");
-        }
+        command = splited_command[0];
 
         match command {
+            // 파라미터가 불필요한 명령어
             "exit" => break,
-            "echo" => command_echo(&command_args),
-            "type" => command_type(&command_args),
             "pwd" => command_pwd(),
-            "cd" => command_cd(&command_args),
-            _ => command_execute(command, &command_args)
+            // 파라미터가 필요한 명령어
+            _ => {
+                let command_args = splited_command[1..].join(" ");
+                match command {
+                    "echo" => command_echo(&command_args),
+                    "type" => command_type(&command_args),
+                    "cd" => command_cd(&command_args),
+                    _ => command_execute(command, &command_args)
+                };
+            }
         };
     }
 }
@@ -73,7 +78,6 @@ fn command_pwd() {
 }
 
 fn command_cd(args: &str) {
-
     // cd HOME environment
     let try_change_path: Cow<'_, str> = if args == "~" {
         match env::var("HOME") {
