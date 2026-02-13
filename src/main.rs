@@ -1,8 +1,9 @@
 use std::{borrow::Cow, env, fs, path::Path, process::Command};
+use std::result::Result::Ok;
+
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
-use anyhow::Ok;
 use is_executable::IsExecutable;
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
