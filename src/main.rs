@@ -2,6 +2,7 @@ use std::{borrow::Cow, env, fs, path::Path, process::Command};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
+use anyhow::Ok;
 use is_executable::IsExecutable;
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
@@ -184,6 +185,16 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
+    let cat_args = command_args_builder(args);
+
+    let output = Command::new("cat")
+        .arg(&cat_args)
+        .output()
+        .expect(&format!("command_cat error. cat_args: {}", &cat_args));
+
+    print!("{}", String::from_utf8_lossy(&output.stdout))
+
+    /*
     let split_char ;
     if args.contains("\"") {
         split_char = '"';
@@ -210,6 +221,7 @@ fn command_cat(args: &str) {
         };
         print!("{}", file_contents)
     }
+     */
 }
 
 fn command_execute(command: &str, command_args: &str) {
