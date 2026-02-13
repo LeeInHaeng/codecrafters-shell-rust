@@ -172,9 +172,16 @@ fn command_cat(args: &str) {
 
     for file_path in file_path_args {
         let mut quoted_path = String::with_capacity(file_path.len() + 2);
-        quoted_path.push('\'');
-        quoted_path.push_str(file_path);
-        quoted_path.push('\'');
+        if file_path.contains("'") {
+            quoted_path.push('\"');
+            quoted_path.push_str(file_path);
+            quoted_path.push('\"');
+        } else {
+            quoted_path.push('\'');
+            quoted_path.push_str(file_path);
+            quoted_path.push('\'');
+        }
+
 
         quoted_path = command_args_builder(&quoted_path);
         let Ok(file_contents) = fs::read_to_string(&quoted_path) else {
