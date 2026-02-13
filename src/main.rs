@@ -167,7 +167,7 @@ fn command_cd(args: &str) {
 
 fn command_cat(args: &str) {
     let mut split_char = '\'';
-    if args.contains("'") {
+    if args.contains("\"") {
         split_char = '"';
     }
 
