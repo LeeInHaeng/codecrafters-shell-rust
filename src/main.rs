@@ -1,4 +1,4 @@
-use std::{env, fs, path::Path, process::Command};
+use std::{borrow::Cow, env, fs, path::Path, process::Command};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -73,7 +73,22 @@ fn command_pwd() {
 }
 
 fn command_cd(args: &str) {
-    let change_path = Path::new(args);
+
+    // cd HOME environment
+    let try_change_path: Cow<'_, str> = if args == "~" {
+        match env::var("HOME") {
+            Ok(home) => Cow::Owned(home),
+            Err(e) => {
+                println!("command_cd HOME env cant found. error: {}", e);
+                return;
+            }
+        }
+    // else args path
+    } else {
+        Cow::Borrowed(args)
+    };
+
+    let change_path = Path::new(try_change_path.as_ref());
     let Ok(_) = env::set_current_dir(&change_path) else {
         println!("cd: {}: No such file or directory", args);
         return;
