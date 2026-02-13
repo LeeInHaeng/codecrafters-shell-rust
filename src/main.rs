@@ -166,7 +166,7 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let file_path_args: Vec<&str> = args.split('\'')
+    let file_path_args: Vec<&str> = args.split('\"')
         .filter(|s| !s.trim().is_empty() && s.trim() != " ")
         .collect();
 
