@@ -76,8 +76,20 @@ fn command_args_builder(args: &str) -> String {
     let mut result = String::with_capacity(args.len());
     let mut is_quote_start = false;
     let mut is_double_quote = false;
+    let mut is_ignore_next = false;
 
     for (idx, char) in args.char_indices() {
+        if char == '\\' && false == is_ignore_next {
+            is_ignore_next = true;
+            continue;
+        }
+
+        if is_ignore_next {
+            result.push(char);
+            is_ignore_next = false;
+            continue;
+        }
+
         if char == '\'' || char == '\"' {
             if is_quote_start {
                 // double quotes 로 묶인거면 single quotes 는 string 에 담고 무시
