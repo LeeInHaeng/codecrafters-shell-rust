@@ -4,7 +4,7 @@ use std::io::{self, Write};
 
 use is_executable::IsExecutable;
 
-const COMMAND: [&str; 3]= ["exit", "echo", "type"];
+const COMMAND: [&str; 4]= ["exit", "echo", "type", "pwd"];
 
 #[derive(PartialEq, Default)]
 enum CommandResult {
@@ -45,6 +45,7 @@ fn main() {
             "exit" => break,
             "echo" => command_echo(&command_args),
             "type" => command_type(&command_args),
+            "pwd" => command_pwd(),
             _ => command_execute(command, &command_args)
         };
     }
@@ -59,6 +60,15 @@ fn command_type(args: &str) {
     if CommandResult::Success == check_command_executable_result.result {
         println!("{} is {}", check_command_executable_result.command, check_command_executable_result.full_path);
     }
+}
+
+fn command_pwd() {
+    let Ok(current_path) = env::current_dir() else {
+        println!("command_pwd current_dir error");
+        return;
+    };
+
+    println!("{}", current_path.display());
 }
 
 fn command_execute(command: &str, command_args: &str) {
