@@ -97,7 +97,7 @@ fn command_args_builder(args: &str) -> String {
 
         if char == '\'' || char == '\"' {
             // 이전 문자가 blackslash 일 경우 현재꺼를 담고 무시
-            if before_char == '\\' {
+            if before_char == '\\' && char == '\"' {
                 result.push(char);
                 continue;
             }
@@ -184,31 +184,10 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let split_char ;
-    if args.contains("\"") {
-        split_char = '"';
-    } else if args.starts_with("\'") {
-        split_char = '\'';
-    } else {
-        split_char = ' ';
-    }
-
-    let file_path_args: Vec<&str> = args.split(split_char)
-        .filter(|s| !s.trim().is_empty() && s.trim() != " ")
-        .collect();
-
     let args_builder = command_args_builder(args);
     let file_path_args = split_by_tmp_segments(&args_builder);
 
     for file_path in file_path_args {
-        /*
-        let mut quoted_path = String::with_capacity(file_path.len() + 2);
-        quoted_path.push(split_char);
-        quoted_path.push_str(file_path);
-        quoted_path.push(split_char);
-
-        quoted_path = command_args_builder(&quoted_path).trim().to_string();
-                 */
         let Ok(file_contents) = fs::read_to_string(&file_path) else {
             println!("command_cat file_path {}: No such file or directory", &file_path);
             continue;
