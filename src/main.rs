@@ -223,7 +223,7 @@ fn command_echo(args: &str) {
 }
 
 fn command_type(args: &str) {
-    let check_command_executable_result = check_command_executable(args);
+    let check_command_executable_result = check_command_executable(args, "");
     if CommandResult::Success == check_command_executable_result.result {
         println!("{} is {}", check_command_executable_result.command, check_command_executable_result.full_path);
     }
@@ -322,7 +322,7 @@ fn split_by_anchor_segments(input: &str, anchor: &str) -> Vec<String> {
 }
 
 fn command_execute(command: &str, command_args: &str) {
-    let check_command_executable_result = check_command_executable(&format!("{} {}", command, command_args).to_string());
+    let check_command_executable_result = check_command_executable(command, command_args);
     if CommandResult::Success != check_command_executable_result.result {
         return;
     }
@@ -338,19 +338,8 @@ fn command_execute(command: &str, command_args: &str) {
     }
 }
 
-fn check_command_executable(args: &str) -> CommandExecutableResult {
+fn check_command_executable(command: &str, command_args: &str) -> CommandExecutableResult {
     let mut result: CommandExecutableResult = CommandExecutableResult::default();
-
-    if args.is_empty() {
-        println!("command args error. args: {}", args);
-        return result;
-    }
-
-    // borrow
-    let Some(command) = args.split(' ').next() else {
-        println!("command args error. args: {}", args);
-        return result;
-    };
 
     // struct 에 담기 때문에 owned
     result.command = command.to_string();
