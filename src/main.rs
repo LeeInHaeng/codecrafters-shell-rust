@@ -145,9 +145,17 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let file_path_args = command_args_builder(args);
+    let file_path_args: Vec<&str> = args.split('\'')
+        .filter(|s| !s.trim().is_empty() && s.trim() != " ")
+        .collect();
 
-    for file_path in file_path_args.split(' ') {
+    for file_path in file_path_args {
+        let mut quoted_path = String::with_capacity(file_path.len() + 2);
+        quoted_path.push('\'');
+        quoted_path.push_str(file_path);
+        quoted_path.push('\'');
+
+        let file_path = command_args_builder(&quoted_path);
         let Ok(file_contents) = fs::read_to_string(&file_path) else {
             println!("command_cat file_path {}: No such file or directory", &file_path);
             continue;
