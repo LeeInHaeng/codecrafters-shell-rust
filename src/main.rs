@@ -58,8 +58,47 @@ fn main() {
     }
 }
 
+//echo 'hello    world'   :   hello    world  : 따옴표 안의 공백은 그대로 유지됩니다.
+//echo hello    world :   hello world : 연속된 공백은 따옴표로 묶지 않는 한 축소됩니다.
+//echo 'hello''world' : helloworld    : 인접한 따옴표로 묶인 문자열 'hello'은 'world'연결됩니다.
+//echo hello''world   : helloworld    : 빈 따옴표 ''는 무시됩니다.
 fn command_echo(args: &str) {
-    println!("{}", args);
+    let mut echo_result = String::with_capacity(args.len());
+    let mut is_quote_start = false;
+
+    for (idx, char) in args.char_indices() {
+        if char == '\'' {
+            if is_quote_start {
+                is_quote_start = false;
+                continue;
+            } else {
+                is_quote_start = true;
+                continue;
+            }
+        } else {
+            // 싱글 쿼터가 시작 단계 였으면 아무 가공도 하지 않고 그냥 push
+            if is_quote_start {
+                echo_result.push(char);
+                continue;
+            // 싱글 쿼터로 묶인 단계가 아닐 경우
+            } else {
+                let mut before_char = '\0';
+                if 0 < idx {
+                    before_char = args.as_bytes()[idx - 1] as char;
+                }
+
+                // 이전 인덱스가 공백이면 중복 공백 제거를 위해 pass
+                if before_char == ' ' {
+                    continue;
+                // string push
+                } else {
+                    echo_result.push(char);
+                    continue;
+                }
+            }
+        }
+    }
+    println!("{}", echo_result);
 }
 
 fn command_type(args: &str) {
@@ -155,6 +194,7 @@ fn check_command_executable(args: &str) -> CommandExecutableResult {
         }
 
         // Check if the file has execute permissions.
+        // full_display 를 result 에 담아야 되기 때문에 into_owned 로 소유
         let full_display = full.to_string_lossy().into_owned();
         let path_display = Path::new(&full_display);
         if false == path_display.is_executable() {
