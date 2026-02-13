@@ -51,6 +51,8 @@ fn main() {
                     "echo" => command_echo(&command_args),
                     "type" => command_type(&command_args),
                     "cd" => command_cd(&command_args),
+                    // 해당 challenge 에서 cat 명령어가 기본적으로 있다고 하지만
+                    // 윈도우 환경 에서 정상 인식이 안되기 때문에 별도 command 로 구현
                     "cat" => command_cat(&command_args),
                     _ => command_execute(command, &command_args)
                 };
@@ -59,29 +61,48 @@ fn main() {
     }
 }
 
+//// single quotes ///
 // 'hello    world'   :   hello    world  : 따옴표 안의 공백은 그대로 유지됩니다.
 // hello    world :   hello world : 연속된 공백은 따옴표로 묶지 않는 한 축소됩니다.
 // 'hello''world' : helloworld    : 인접한 따옴표로 묶인 문자열 'hello'은 'world'연결됩니다.
 // hello''world   : helloworld    : 빈 따옴표 ''는 무시됩니다.
+
+/// double quotes ///
+// "hello    world" : hello    world
+// "hello""world" : helloworld
+// "hello" "world" : hello world
+// "shell's test" : shell's test
 fn command_args_builder(args: &str) -> String {
     let mut result = String::with_capacity(args.len());
     let mut is_quote_start = false;
+    let mut is_double_quote = false;
 
     for (idx, char) in args.char_indices() {
-        if char == '\'' {
+        if char == '\'' || char == '\"' {
             if is_quote_start {
+                // double quotes 로 묶인거면 single quotes 는 string 에 담고 무시
+                if is_double_quote && char == '\'' {
+                    result.push(char);
+                    continue;
+                }
+
                 is_quote_start = false;
+                is_double_quote = false;
                 continue;
             } else {
                 is_quote_start = true;
+                if char == '\"' {
+                    is_double_quote = true;
+                }
+
                 continue;
             }
         } else {
-            // 싱글 쿼터가 시작 단계 였으면 아무 가공도 하지 않고 그냥 push
+            // 쿼터가 시작 단계 였으면 아무 가공도 하지 않고 그냥 push
             if is_quote_start {
                 result.push(char);
                 continue;
-            // 싱글 쿼터로 묶인 단계가 아닐 경우
+            // 쿼터로 묶인 단계가 아닐 경우
             } else {
                 let mut before_char = '\0';
                 if 0 < idx {
@@ -155,9 +176,9 @@ fn command_cat(args: &str) {
         quoted_path.push_str(file_path);
         quoted_path.push('\'');
 
-        let file_path = command_args_builder(&quoted_path);
-        let Ok(file_contents) = fs::read_to_string(&file_path) else {
-            println!("command_cat file_path {}: No such file or directory", &file_path);
+        quoted_path = command_args_builder(&quoted_path);
+        let Ok(file_contents) = fs::read_to_string(&quoted_path) else {
+            println!("command_cat file_path {}: No such file or directory", &quoted_path);
             continue;
         };
         print!("{}", file_contents)
