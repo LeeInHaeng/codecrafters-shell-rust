@@ -26,20 +26,77 @@ fn main() {
         io::stdout().flush().unwrap();
 
         // owned
-        let mut command = String::new();
+        let mut input = String::new();
 
-        io::stdin().read_line(&mut command).unwrap();
+        io::stdin().read_line(&mut input).unwrap();
         
-        // 아래 라인 부터는 owned 가 불필요 , borrow 로 진행
-        let mut command = command.trim();
+        let input_command = input.trim();
+
+        // command 는 command_args_builder 함수를 태워야 되기 때문에 다 owned 로 한다.
+        let mut command = String::new();
+        // command_args 는 단순 slice 로 가능해서 borrowed 로 한다.
         let command_args;
 
-        if let Some((cmd, rest)) = command.split_once(' ') {
-            command = cmd;
-            command_args = rest.trim();
+        // command 가 쿼터로 묶여 있으면
+        if input_command.starts_with('\'') || input_command.starts_with('\"') {
+            let split_pattern;
+            if input_command.starts_with('\'') {
+                split_pattern = '\'';
+            } else {
+                split_pattern = '\"';
+            }
+
+            // 마지막 쿼터까지 한번 파싱
+            let Some(command_filter) = input_command.strip_prefix(split_pattern) else {
+                println!("command quotes invalid");
+                continue;
+            };
+            let Some(command_quote_end_idx) = command_filter.find(split_pattern) else {
+                println!("command single quotes invalid");
+                continue;
+            };
+
+            // command_filter 섀도잉
+            let command_filter = &command_filter[..command_quote_end_idx];
+
+            // 기존에 묶여있던 쿼터로 다시 한번 묶어줌
+            let mut command_args_builder_param = String::new();
+            if split_pattern == '\'' {
+                command_args_builder_param.push('\'');
+            } else {
+                command_args_builder_param.push('"');
+            }
+            command_args_builder_param.push_str(command_filter);
+            if split_pattern == '\'' {
+                command_args_builder_param.push('\'');
+            } else {
+                command_args_builder_param.push('"');
+            }
+
+            command = command_args_builder(&command_args_builder_param);
+
+            let Some(command_args_filter) = input_command.strip_prefix(&command_args_builder_param) else {
+                println!("command single quotes invalid");
+                continue;
+            };
+            command_args = command_args_filter.trim();
+
+        // 아무것도 묶여있지 않으면 공백으로 커맨드, 커맨드 파라미터 분리
+        } else if input_command.contains(" ") {
+            if let Some((cmd, rest)) = input_command.split_once(' ') {
+                command = cmd.to_string();
+                command_args = rest.trim();
+            } else {
+                command_args = "";
+            }
+        // 공백 조차 없으면 파라미터가 없는거
         } else {
+            command = input_command.to_string();
             command_args = "";
         }
+
+        // command 섀도잉
+        let command = &command[..];
 
         match command {
             // 파라미터가 불필요한 명령어
@@ -120,6 +177,11 @@ fn command_args_builder(args: &str) -> String {
             if is_quote_start {
                 // double quotes 로 묶인거면 single quotes 는 string 에 담고 무시
                 if is_double_quote && char == '\'' {
+                    result.push(char);
+                    continue;
+                }
+                // single quotes 로 묶인거면 double quotes 는 string 에 담고 무시
+                if false == is_double_quote && char == '\"' {
                     result.push(char);
                     continue;
                 }
