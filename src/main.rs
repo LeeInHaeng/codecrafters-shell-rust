@@ -87,8 +87,8 @@ fn command_echo(args: &str) {
                     before_char = args.as_bytes()[idx - 1] as char;
                 }
 
-                // 이전 인덱스가 공백이면 중복 공백 제거를 위해 pass
-                if before_char == ' ' {
+                // 현재 char 이 공백이고, 이전 인덱스의 char 가 공백이면 중복 공백 제거를 위해 pass
+                if char == ' ' && before_char == ' ' {
                     continue;
                 // string push
                 } else {
