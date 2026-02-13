@@ -145,18 +145,15 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let file_path = command_args_builder(args);
-    if file_path.is_empty() {
-        println!("command_cat command_args_builder is empty. args: {}", args);
-        return;
+    let file_path_args = command_args_builder(args);
+
+    for file_path in file_path_args.split(' ') {
+        let Ok(file_contents) = fs::read_to_string(&file_path) else {
+            println!("command_cat file_path {}: No such file or directory", &file_path);
+            continue;
+        };
+        print!("{}", file_contents)
     }
-
-    let Ok(file_contents) = fs::read_to_string(&file_path) else {
-        println!("command_cat file_path {}: No such file or directory", &file_path);
-        return;
-    };
-
-    println!("{}", file_contents);
 }
 
 fn command_execute(command: &str, command_args: &str) {
