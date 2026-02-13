@@ -78,6 +78,7 @@ fn command_args_builder(args: &str) -> String {
     let mut is_quote_start = false;
     let mut is_double_quote = false;
     let mut is_ignore_next = false;
+    let mut is_ignore_backslash = false;
 
     for (idx, char) in args.char_indices() {
         let mut before_char = '\0';
@@ -102,12 +103,16 @@ fn command_args_builder(args: &str) -> String {
         if is_ignore_next {
             result.push(char);
             is_ignore_next = false;
+            // 무시된 문자열이 백슬래쉬인 경우 해당 백슬래쉬 효과도 다음에 무시
+            if char == '\\' {
+                is_ignore_backslash = true;
+            }
             continue;
         }
 
         if char == '\'' || char == '\"' {
             // 이전 문자가 blackslash 일 경우 \'\ 가 아니면 현재꺼를 담고 무시
-            if before_char == '\\' && char == '\"' {
+            if before_char == '\\' && char == '\"' && false == is_ignore_backslash {
                 result.push(char);
                 continue;
             }
