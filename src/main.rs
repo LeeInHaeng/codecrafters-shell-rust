@@ -178,9 +178,13 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let mut split_char = '\'';
+    let split_char ;
     if args.contains("\"") {
         split_char = '"';
+    } else if args.starts_with("\'") {
+        split_char = '\'';
+    } else {
+        split_char = ' ';
     }
 
     let file_path_args: Vec<&str> = args.split(split_char)
