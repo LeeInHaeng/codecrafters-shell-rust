@@ -197,8 +197,7 @@ fn command_cat(args: &str) {
         quoted_path.push_str(file_path);
         quoted_path.push(split_char);
 
-
-        quoted_path = command_args_builder(&quoted_path);
+        quoted_path = command_args_builder(&quoted_path).trim().to_string();
         let Ok(file_contents) = fs::read_to_string(&quoted_path) else {
             println!("command_cat file_path {}: No such file or directory", &quoted_path);
             continue;
