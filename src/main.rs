@@ -4,7 +4,7 @@ use std::io::{self, Write};
 
 use is_executable::IsExecutable;
 
-const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
+const COMMAND: [&str; 6]= ["exit", "echo", "type", "pwd", "cd", "cat"];
 
 #[derive(PartialEq, Default)]
 enum CommandResult {
@@ -51,7 +51,7 @@ fn main() {
                     "echo" => command_echo(&command_args),
                     "type" => command_type(&command_args),
                     "cd" => command_cd(&command_args),
-                    //"cat" => command_cat(&command_args),
+                    "cat" => command_cat(&command_args),
                     _ => command_execute(command, &command_args)
                 };
             }
@@ -144,7 +144,6 @@ fn command_cd(args: &str) {
     };
 }
 
-/*
 fn command_cat(args: &str) {
     let file_path_args: Vec<&str> = args.split('\'')
         .filter(|s| !s.trim().is_empty() && s.trim() != " ")
@@ -164,7 +163,6 @@ fn command_cat(args: &str) {
         print!("{}", file_contents)
     }
 }
-     */
 
 fn command_execute(command: &str, command_args: &str) {
     let check_command_executable_result = check_command_executable(&format!("{} {}", command, command_args).to_string());
