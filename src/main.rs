@@ -200,7 +200,7 @@ fn command_cd(args: &str) {
 
 fn command_cat(args: &str) {
     let args_builder = command_args_builder(args);
-    let file_path_args = split_by_tmp_segments(&args_builder);
+    let file_path_args = split_by_anchor_segments(&args_builder, "/tmp");
 
     for file_path in file_path_args {
         let Ok(file_contents) = fs::read_to_string(&file_path) else {
@@ -211,69 +211,44 @@ fn command_cat(args: &str) {
     }
 }
 
-fn split_by_tmp_segments(input: &str) -> Vec<String> {
+fn strip_wrapping_quotes(s: &str) -> &str {
+    let s = s.trim();
+    if s.len() >= 2 {
+        let b = s.as_bytes();
+        if (b[0] == b'"' && b[b.len() - 1] == b'"') || (b[0] == b'\'' && b[b.len() - 1] == b'\'') {
+            return &s[1..s.len() - 1];
+        }
+    }
+    s
+}
+
+/// Split into segments that start with `anchor` (e.g. "/tmp/fox/").
+/// Segment ends right before the next anchor occurrence (at a boundary).
+fn split_by_anchor_segments(input: &str, anchor: &str) -> Vec<String> {
+    let input = strip_wrapping_quotes(input);
     let bytes = input.as_bytes();
-    let mut out: Vec<String> = Vec::new();
+    let a = anchor.as_bytes();
 
-    let mut in_single = false;
-    let mut in_double = false;
-    let mut escape = false;
-
+    let mut out = Vec::new();
     let mut seg_start: Option<usize> = None;
 
     let mut i = 0usize;
-    while i < bytes.len() {
-        let b = bytes[i];
+    while i + a.len() <= bytes.len() {
+        let is_anchor = bytes[i..].starts_with(a);
+        let boundary_ok = i == 0 || bytes[i - 1].is_ascii_whitespace(); // 필요하면 더 확장 가능
 
-        // escape 처리(더블쿼트에서만 엄격히 하고 싶으면 조건 추가 가능)
-        if escape {
-            escape = false;
-            i += 1;
-            continue;
-        }
-        if b == b'\\' {
-            // 따옴표 안에서의 이스케이프를 최소로 처리
-            escape = true;
-            i += 1;
-            continue;
-        }
-
-        // 따옴표 토글(이스케이프 안된 경우)
-        if b == b'\'' && !in_double {
-            in_single = !in_single;
-            i += 1;
-            continue;
-        }
-        if b == b'"' && !in_single {
-            in_double = !in_double;
-            i += 1;
-            continue;
-        }
-
-        // 따옴표 밖에서만 "/tmp" 시작점 인식
-        if !in_single && !in_double {
-            // "/tmp" 또는 "/tmp/" 둘 다 허용하고 싶으면 여기에서 조정
-            let is_tmp = bytes[i..].starts_with(b"/tmp");
-
-            // 보통은 경로 경계가 공백(또는 시작)일 때만 새 세그먼트로 인정
-            let boundary_ok = i == 0 || bytes[i - 1].is_ascii_whitespace();
-
-            if is_tmp && boundary_ok {
-                if let Some(s) = seg_start {
-                    // 이전 세그먼트 저장
-                    let seg = input[s..i].trim();
-                    if !seg.is_empty() {
-                        out.push(seg.to_string());
-                    }
+        if is_anchor && boundary_ok {
+            if let Some(s) = seg_start {
+                let seg = input[s..i].trim();
+                if !seg.is_empty() {
+                    out.push(seg.to_string());
                 }
-                seg_start = Some(i);
             }
+            seg_start = Some(i);
         }
-
         i += 1;
     }
 
-    // 마지막 세그먼트 저장
     if let Some(s) = seg_start {
         let seg = input[s..].trim();
         if !seg.is_empty() {
