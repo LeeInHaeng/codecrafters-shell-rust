@@ -151,8 +151,8 @@ fn command_cat(args: &str) {
         return;
     }
 
-    let Ok(file_contents) = fs::read_to_string(file_path) else {
-        println!("command_cat file_path {}: No such file or directory", file_path);
+    let Ok(file_contents) = fs::read_to_string(&file_path) else {
+        println!("command_cat file_path {}: No such file or directory", &file_path);
         return;
     };
 
