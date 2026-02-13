@@ -30,14 +30,16 @@ fn main() {
 
         io::stdin().read_line(&mut command).unwrap();
         
-        // borrow
+        // 아래 라인 부터는 owned 가 불필요 , borrow 로 진행
         let mut command = command.trim();
-        let splited_command: Vec<&str> = command.split(' ').collect();
-        if splited_command.is_empty() || splited_command[0].is_empty() {
-            continue;
-        }
+        let command_args;
 
-        command = splited_command[0];
+        if let Some((cmd, rest)) = command.split_once(' ') {
+            command = cmd;
+            command_args = rest.trim();
+        } else {
+            command_args = "";
+        }
 
         match command {
             // 파라미터가 불필요한 명령어
@@ -45,7 +47,6 @@ fn main() {
             "pwd" => command_pwd(),
             // 파라미터가 필요한 명령어
             _ => {
-                let command_args = splited_command[1..].join(" ");
                 match command {
                     "echo" => command_echo(&command_args),
                     "type" => command_type(&command_args),
@@ -124,14 +125,13 @@ fn check_command_executable(args: &str) -> CommandExecutableResult {
         return result;
     }
 
-    let splited_args: Vec<&str> = args.split(' ').collect();
-    if splited_args.is_empty() || splited_args[0].is_empty() {
+    // borrow
+    let Some(command) = args.split(' ').next() else {
         println!("command args error. args: {}", args);
         return result;
-    }
+    };
 
-    let command = splited_args[0];
-
+    // struct 에 담기 때문에 owned
     result.command = command.to_string();
     result.result = CommandResult::NotFound;
 
