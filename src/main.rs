@@ -79,7 +79,12 @@ fn command_args_builder(args: &str) -> String {
     let mut is_ignore_next = false;
 
     for (idx, char) in args.char_indices() {
-        if char == '\\' && false == is_ignore_next {
+        let mut before_char = '\0';
+        if 0 < idx {
+            before_char = args.as_bytes()[idx - 1] as char;
+        }
+
+        if char == '\\' && false == is_ignore_next && false == is_quote_start {
             is_ignore_next = true;
             continue;
         }
@@ -91,6 +96,12 @@ fn command_args_builder(args: &str) -> String {
         }
 
         if char == '\'' || char == '\"' {
+            // 이전 문자가 blackslash 일 경우 현재꺼를 담고 무시
+            if before_char == '\\' {
+                result.push(char);
+                continue;
+            }
+
             if is_quote_start {
                 // double quotes 로 묶인거면 single quotes 는 string 에 담고 무시
                 if is_double_quote && char == '\'' {
@@ -116,11 +127,6 @@ fn command_args_builder(args: &str) -> String {
                 continue;
             // 쿼터로 묶인 단계가 아닐 경우
             } else {
-                let mut before_char = '\0';
-                if 0 < idx {
-                    before_char = args.as_bytes()[idx - 1] as char;
-                }
-
                 // 현재 char 이 공백이고, 이전 인덱스의 char 가 공백이면 중복 공백 제거를 위해 pass
                 if char == ' ' && before_char == ' ' {
                     continue;
