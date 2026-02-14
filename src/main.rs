@@ -417,18 +417,43 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     let command_execute_args_builder = command_execute_args_builder.trim();
+    let command_args_vec = special_char_args_builder(command_execute_args_builder);
 
-    // execute command
-    match Command::new(check_command_executable_result.command)
-        .args(special_char_args_builder(command_execute_args_builder))
-        .output() {
-            Ok(output) => {
-                command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
-            },
-            Err(e) => {
-                println!("{}", e);
+    let mut valid_command_args:Vec<String> = vec![];
+
+    for command_arg in command_args_vec {
+        let command_arg = command_arg.trim();
+
+        if command_arg.is_empty() {
+            continue;
+        }
+
+        // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
+        if command_arg.starts_with("-") {
+            valid_command_args.push(command_arg.to_string());
+            continue;
+        }
+
+        // 슬래쉬로 시작하면 path 로 인식, 있는 path 인지 확인
+        if command_arg.starts_with("/") {
+            let path = Path::new(&command_arg);
+            if false == path.exists() {
+                println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+                continue;
             }
         }
+        valid_command_args.push(command_arg.to_string());
+    }
+
+    // execute command
+    match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
+        Ok(output) => {
+            command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
+        },
+        Err(e) => {
+            println!("{}", e);
+        }
+    }
 }
 
 fn check_command_executable(command: &str) -> CommandExecutableResult {
