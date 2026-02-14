@@ -434,14 +434,13 @@ fn command_execute(command: &str, command_args: &str) {
             continue;
         }
 
-        // 슬래쉬로 시작하면 path 로 인식, 있는 path 인지 확인
-        if command_arg.starts_with("/") {
-            let path = Path::new(&command_arg);
-            if false == path.exists() {
-                println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
-                continue;
-            }
+        // 있는 path 인지 확인{
+        let path = Path::new(&command_arg);
+        if false == path.exists() {
+            println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+            continue;
         }
+
         valid_command_args.push(command_arg.to_string());
     }
 
