@@ -403,7 +403,8 @@ fn command_execute(command: &str, command_args: &str) {
         command_args_vec = command_execute_args_builder.split_whitespace().collect();
     }
 
-    let mut valid_command_args:Vec<&str> = vec![];
+    let mut valid_command_args:Vec<String> = vec![];
+
     // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
     for command_arg in command_args_vec {
         if command_arg.trim().is_empty() {
@@ -411,19 +412,20 @@ fn command_execute(command: &str, command_args: &str) {
         }
 
         if command_arg.starts_with("-") {
-            valid_command_args.push(command_arg);
+            valid_command_args.push(command_arg.to_string());
             continue;
         }
 
-        let mut tmp_command_args = String::new();
-        tmp_command_args.push_str("/tmp");
-        tmp_command_args.push_str(command_arg);
-        let path = Path::new(&tmp_command_args);
+        let mut tmp_command_arg = String::new();
+        tmp_command_arg.push_str("/tmp");
+        tmp_command_arg.push_str(command_arg);
+
+        let path = Path::new(&tmp_command_arg);
         if false == path.exists() {
-            println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+            println!("{}: {}: No such file or directory", check_command_executable_result.command, tmp_command_arg);
             continue;
         }
-        valid_command_args.push(command_arg);
+        valid_command_args.push(tmp_command_arg);
     }
 
     // execute command
