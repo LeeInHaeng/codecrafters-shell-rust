@@ -379,9 +379,9 @@ fn command_execute(command: &str, command_args: &str) {
     } else {
         command_execute_args_builder = command_args.to_string();
         if command == "cat" {
-            command_output_enum = CommandOutput::StdOut    
+            command_output_enum = CommandOutput::StdOutNewLine    
         } else {
-            command_output_enum = CommandOutput::StdOutNewLine;
+            command_output_enum = CommandOutput::StdOut;
         }
         writer_output = "".to_string();
     }
