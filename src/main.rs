@@ -351,101 +351,6 @@ fn command_cd(args: &str) {
 
 fn command_cat(args: &str) {
     command_execute("cat", args);
-
-    /*
-    let cat_args_builder;
-    let command_output_enum;
-    let writer_output;
-    let is_redirection_args = is_redirection_args(args);
-
-    if is_redirection_args {
-        let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(args);
-        if redirection_args_builder_result.result != CommandResult::Success {
-            return;
-        }
-
-        cat_args_builder = redirection_args_builder_result.command_args;
-        command_output_enum = CommandOutput::File;
-        writer_output = redirection_args_builder_result.output;
-    } else {
-        cat_args_builder = args.to_string();
-        command_output_enum = CommandOutput::StdOut;
-        writer_output = "".to_string();
-    }
-
-    let cat_args_builder = special_char_args_builder(&cat_args_builder);
-    let file_path_args = split_by_anchor_segments(&cat_args_builder, "/tmp");
-
-    if file_path_args.len() == 0 {
-        let Ok(file_contents) = fs::read_to_string(&cat_args_builder) else {
-            command_output(CommandOutput::StdOutNewLine, &format!("cat: {}: No such file or directory", &cat_args_builder), "");
-            if is_redirection_args {
-                command_output(CommandOutput::File, "", &writer_output);
-            }
-            return;
-        };
-        command_output(command_output_enum, &file_contents, &writer_output);
-    } else {
-        for file_path in file_path_args {
-            let Ok(file_contents) = fs::read_to_string(&file_path) else {
-                command_output(CommandOutput::StdOutNewLine, &format!("cat: {}: No such file or directory", &file_path), "");
-                if is_redirection_args {
-                    command_output(CommandOutput::File, "", &writer_output);
-                }
-                continue;
-            };
-            command_output(command_output_enum.clone(), &file_contents, &writer_output);
-        }
-    }
-     */
-}
-
-fn strip_wrapping_quotes(s: &str) -> &str {
-    let s = s.trim();
-    if s.len() >= 2 {
-        let b = s.as_bytes();
-        if (b[0] == b'"' && b[b.len() - 1] == b'"') || (b[0] == b'\'' && b[b.len() - 1] == b'\'') {
-            return &s[1..s.len() - 1];
-        }
-    }
-    s
-}
-
-/// Split into segments that start with `anchor` (e.g. "/tmp/fox/").
-/// Segment ends right before the next anchor occurrence (at a boundary).
-fn split_by_anchor_segments(input: &str, anchor: &str) -> Vec<String> {
-    let input = strip_wrapping_quotes(input);
-    let bytes = input.as_bytes();
-    let a = anchor.as_bytes();
-
-    let mut out = Vec::new();
-    let mut seg_start: Option<usize> = None;
-
-    let mut i = 0usize;
-    while i + a.len() <= bytes.len() {
-        let is_anchor = bytes[i..].starts_with(a);
-        let boundary_ok = i == 0 || bytes[i - 1].is_ascii_whitespace(); // 필요하면 더 확장 가능
-
-        if is_anchor && boundary_ok {
-            if let Some(s) = seg_start {
-                let seg = input[s..i].trim();
-                if !seg.is_empty() {
-                    out.push(seg.to_string());
-                }
-            }
-            seg_start = Some(i);
-        }
-        i += 1;
-    }
-
-    if let Some(s) = seg_start {
-        let seg = input[s..].trim();
-        if !seg.is_empty() {
-            out.push(seg.to_string());
-        }
-    }
-
-    out
 }
 
 fn command_ls(args: &str) {
@@ -473,7 +378,7 @@ fn command_execute(command: &str, command_args: &str) {
         writer_output = redirection_args_builder_result.output;
     } else {
         command_execute_args_builder = command_args.to_string();
-        command_output_enum = CommandOutput::StdOut;
+        command_output_enum = CommandOutput::StdOutNewLine;
         writer_output = "".to_string();
     }
 
