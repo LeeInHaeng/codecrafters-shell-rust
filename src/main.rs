@@ -428,6 +428,8 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(tmp_command_arg);
     }
 
+    println!("{}", check_command_executable_result.command);
+    println!("{:?}", valid_command_args);
     // execute command
     match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
         Ok(output) => {
