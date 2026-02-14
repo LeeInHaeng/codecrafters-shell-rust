@@ -414,7 +414,11 @@ fn command_execute(command: &str, command_args: &str) {
             valid_command_args.push(command_arg);
             continue;
         }
-        let path = Path::new(command_arg);
+
+        let mut tmp_command_args = String::new();
+        tmp_command_args.push_str("/tmp");
+        tmp_command_args.push_str(command_arg);
+        let path = Path::new(&tmp_command_args);
         if false == path.exists() {
             println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
             continue;
