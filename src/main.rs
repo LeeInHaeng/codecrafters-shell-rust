@@ -126,6 +126,7 @@ fn main() {
                     // 윈도우 환경 에서 정상 인식이 안되기 때문에 별도 command 로 구현
                     // 기본 cat 은 /tmp 하위로 기본 셋팅 해둔다.
                     "cat" => command_cat(&command_args),
+                    "ls" => command_ls(&command_args),
                     _ => command_execute(command, &command_args)
                 };
             }
@@ -349,6 +350,9 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
+    command_execute("ls", args);
+
+    /*
     let cat_args_builder;
     let command_output_enum;
     let writer_output;
@@ -393,6 +397,7 @@ fn command_cat(args: &str) {
             command_output(command_output_enum.clone(), &file_contents, &writer_output);
         }
     }
+     */
 }
 
 fn strip_wrapping_quotes(s: &str) -> &str {
@@ -443,16 +448,39 @@ fn split_by_anchor_segments(input: &str, anchor: &str) -> Vec<String> {
     out
 }
 
+fn command_ls(args: &str) {
+    command_execute("ls", args);
+}
+
 fn command_execute(command: &str, command_args: &str) {
     let check_command_executable_result = check_command_executable(command);
     if CommandResult::Success != check_command_executable_result.result {
         return;
     }
 
+    let command_execute_args_builder;
+    let command_output_enum;
+    let writer_output;
+
+    if is_redirection_args(command_args) {
+        let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
+        if redirection_args_builder_result.result != CommandResult::Success {
+            return;
+        }
+
+        command_execute_args_builder = redirection_args_builder_result.command_args;
+        command_output_enum = CommandOutput::File;
+        writer_output = redirection_args_builder_result.output;
+    } else {
+        command_execute_args_builder = command_args.to_string();
+        command_output_enum = CommandOutput::StdOut;
+        writer_output = "".to_string();
+    }
+
     // execute command
-    match Command::new(check_command_executable_result.command).args(command_args.split_whitespace()).output() {
+    match Command::new(check_command_executable_result.command).args(command_execute_args_builder.split_whitespace()).output() {
         Ok(output) => {
-            print!("{}", str::from_utf8(&output.stdout).unwrap());
+            command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
         },
         Err(e) => {
             println!("{}", e);
