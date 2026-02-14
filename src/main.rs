@@ -477,7 +477,7 @@ fn command_execute(command: &str, command_args: &str) {
         writer_output = "".to_string();
     }
 
-    println!("{:?}", command_execute_args_builder.split_whitespace());
+    println!("{:?}", command_execute_args_builder.split_whitespace().collect::<Vec<&str>>());
 
     // execute command
     match Command::new(check_command_executable_result.command).args(command_execute_args_builder.split_whitespace()).output() {
