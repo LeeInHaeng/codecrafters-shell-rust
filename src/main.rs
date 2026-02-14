@@ -150,7 +150,11 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
     }
 
     if enum_output == CommandOutput::File {
-        let _ = fs::write(writer_output, args);
+        match fs::write(writer_output, args) {
+            Ok(_) => {},
+            Err(e) => println!("file_write error. path: {}, e: {}", writer_output, e)
+        };
+        
     }
 }
 
@@ -382,11 +386,12 @@ fn command_execute(command: &str, command_args: &str) {
         writer_output = redirection_args_builder_result.output;
     } else {
         command_execute_args_builder = command_args.to_string();
-        if command == "cat" {
-            command_output_enum = CommandOutput::StdOutNewLine    
-        } else {
-            command_output_enum = CommandOutput::StdOut;
-        }
+        //if command == "cat" {
+        //    command_output_enum = CommandOutput::StdOutNewLine    
+        //} else {
+        //    command_output_enum = CommandOutput::StdOut;
+       // }
+        command_output_enum = CommandOutput::StdOut;
         writer_output = "".to_string();
     }
 
