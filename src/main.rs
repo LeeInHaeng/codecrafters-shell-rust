@@ -378,7 +378,11 @@ fn command_execute(command: &str, command_args: &str) {
         writer_output = redirection_args_builder_result.output;
     } else {
         command_execute_args_builder = command_args.to_string();
-        command_output_enum = CommandOutput::StdOutNewLine;
+        if command == "cat" {
+            command_output_enum = CommandOutput::StdOut    
+        } else {
+            command_output_enum = CommandOutput::StdOutNewLine;
+        }
         writer_output = "".to_string();
     }
 
