@@ -206,16 +206,6 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
             if char == '\\' {
                 is_ignore_backslash = true;
             }
-
-            if char == '\"' {
-                if is_quote_start {
-                    is_quote_start = false;
-                    is_double_quote = false;
-                } else {
-                    is_quote_start = true;
-                    is_double_quote = true;
-                }
-            }
             continue;
         }
 
@@ -262,6 +252,12 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
                 if char == ' ' {
                     // 이전 인덱스의 char 가 공백이면 중복 공백 제거를 위해 pass
                     if before_char == ' ' {
+                        continue;
+                    }
+
+                    // 쿼터로 묶여 있는게 아니라면 담고 pass
+                    if false == is_quote_start {
+                        result_tmp.push(char);
                         continue;
                     }
 
