@@ -341,7 +341,7 @@ fn command_echo(args: &str) {
         return;
     }
 
-    let echo_args_builder = echo_args_builder.join(" ");
+    let echo_args_builder = echo_args_builder.join("");
     command_output(command_output_enum, &echo_args_builder, &writer_output);
 }
 
