@@ -350,7 +350,7 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    command_execute("ls", args);
+    command_execute("cat", args);
 
     /*
     let cat_args_builder;
