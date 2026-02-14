@@ -170,6 +170,10 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 // "hello""world" : helloworld
 // "hello" "world" : hello world
 // "shell's test" : shell's test
+
+// "example\"insidequotes"world\" : example"insidequotesworld"
+// \'\"world example\"\' : '"world example"'
+// "mixed\"quote'world'\\" : mixed"quote'world'\
 fn special_char_args_builder(args: &str) -> Vec<String> {
     let mut result = vec![];
 
@@ -178,6 +182,7 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
     let mut is_double_quote = false;
     let mut is_ignore_next = false;
     let mut is_ignore_backslash = false;
+    let mut is_ignore_result_push = false;
 
     for (idx, char) in args.char_indices() {
         let mut before_char = '\0';
@@ -205,6 +210,10 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
             // 무시된 문자열이 백슬래쉬인 경우 해당 백슬래쉬 효과도 다음에 무시
             if char == '\\' {
                 is_ignore_backslash = true;
+            }
+
+            if char == '\'' || char == '\"' {
+                is_ignore_result_push = true;
             }
             continue;
         }
@@ -256,7 +265,7 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
                     }
 
                     // 쿼터로 묶여 있는게 아니라면 담고 pass
-                    if false == is_quote_start {
+                    if false == is_quote_start && is_ignore_result_push {
                         result_tmp.push(char);
                         continue;
                     }
@@ -451,8 +460,6 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     // execute command
-    println!("{}", check_command_executable_result.command);
-    println!("{:?}", valid_command_args);
     match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
         Ok(output) => {
             command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
