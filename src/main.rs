@@ -87,7 +87,8 @@ fn main() {
                 command_args_builder_param.push('"');
             }
 
-            command = special_char_args_builder(&command_args_builder_param);
+            let command_args_builder_result = special_char_args_builder(&command_args_builder_param);
+            command = command_args_builder_result.join(" ");
 
             let Some(command_args_filter) = input_command.strip_prefix(&command_args_builder_param) else {
                 println!("command single quotes invalid");
@@ -169,8 +170,10 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 // "hello""world" : helloworld
 // "hello" "world" : hello world
 // "shell's test" : shell's test
-fn special_char_args_builder(args: &str) -> String {
-    let mut result = String::with_capacity(args.len());
+fn special_char_args_builder(args: &str) -> Vec<String> {
+    let mut result = vec![];
+
+    let mut result_tmp = String::with_capacity(args.len());
     let mut is_quote_start = false;
     let mut is_double_quote = false;
     let mut is_ignore_next = false;
@@ -197,7 +200,7 @@ fn special_char_args_builder(args: &str) -> String {
         }
 
         if is_ignore_next {
-            result.push(char);
+            result_tmp.push(char);
             is_ignore_next = false;
             // 무시된 문자열이 백슬래쉬인 경우 해당 백슬래쉬 효과도 다음에 무시
             if char == '\\' {
@@ -209,24 +212,26 @@ fn special_char_args_builder(args: &str) -> String {
         if char == '\'' || char == '\"' {
             // 이전 문자가 blackslash 일 경우 \'\ 가 아니면 현재꺼를 담고 무시
             if before_char == '\\' && char == '\"' && false == is_ignore_backslash {
-                result.push(char);
+                result_tmp.push(char);
                 continue;
             }
 
             if is_quote_start {
                 // double quotes 로 묶인거면 single quotes 는 string 에 담고 무시
                 if is_double_quote && char == '\'' {
-                    result.push(char);
+                    result_tmp.push(char);
                     continue;
                 }
                 // single quotes 로 묶인거면 double quotes 는 string 에 담고 무시
                 if false == is_double_quote && char == '\"' {
-                    result.push(char);
+                    result_tmp.push(char);
                     continue;
                 }
 
                 is_quote_start = false;
                 is_double_quote = false;
+                result.push(result_tmp);
+                result_tmp = String::with_capacity(args.len());
                 continue;
             } else {
                 is_quote_start = true;
@@ -239,21 +244,38 @@ fn special_char_args_builder(args: &str) -> String {
         } else {
             // 쿼터가 시작 단계 였으면 아무 가공도 하지 않고 그냥 push
             if is_quote_start {
-                result.push(char);
+                result_tmp.push(char);
                 continue;
             // 쿼터로 묶인 단계가 아닐 경우
             } else {
-                // 현재 char 이 공백이고, 이전 인덱스의 char 가 공백이면 중복 공백 제거를 위해 pass
-                if char == ' ' && before_char == ' ' {
+                // 현재 char 이 공백인 경우
+                if char == ' ' {
+                    // 이전 인덱스의 char 가 공백이면 중복 공백 제거를 위해 pass
+                    if before_char == ' ' {
+                        continue;
+                    }
+
+                    // 공백 기준 구분으로 result 에 push
+                    if result_tmp.trim().is_empty() {
+                        continue;
+                    }
+
+                    result.push(result_tmp);
+                    result_tmp = String::with_capacity(args.len());
                     continue;
                 // string push
                 } else {
-                    result.push(char);
+                    result_tmp.push(char);
                     continue;
                 }
             }
         }
     }
+
+    if false == result_tmp.is_empty() {
+        result.push(result_tmp);
+    }
+
     result
 }
 
@@ -319,6 +341,7 @@ fn command_echo(args: &str) {
         return;
     }
 
+    let echo_args_builder = echo_args_builder.join(" ");
     command_output(command_output_enum, &echo_args_builder, &writer_output);
 }
 
@@ -378,8 +401,6 @@ fn command_execute(command: &str, command_args: &str) {
     let command_output_enum;
     let writer_output;
 
-    let command_args = &special_char_args_builder(command_args);
-
     if is_redirection_args(command_args) {
         let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
         if redirection_args_builder_result.result != CommandResult::Success {
@@ -396,51 +417,18 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     let command_execute_args_builder = command_execute_args_builder.trim();
-    let command_args_vec:Vec<&str>;
-    if command.contains("cat") || command.contains("ls") {
-        command_args_vec = command_execute_args_builder.split("/tmp").collect()
-    } else {
-        command_args_vec = command_execute_args_builder.split_whitespace().collect();
-    }
-
-    let mut valid_command_args:Vec<String> = vec![];
-
-    // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
-    for command_arg in command_args_vec {
-        let command_arg = command_arg.trim();
-
-        if command_arg.is_empty() {
-            continue;
-        }
-
-        if command_arg.starts_with("-") {
-            valid_command_args.push(command_arg.to_string());
-            continue;
-        }
-
-        let mut tmp_command_arg = String::new();
-        if command_arg.starts_with("/") {
-            tmp_command_arg.push_str("/tmp");
-        }
-        tmp_command_arg.push_str(command_arg);
-
-        let path = Path::new(&tmp_command_arg);
-        if false == path.exists() {
-            println!("{}: {}: No such file or directory", check_command_executable_result.command, tmp_command_arg);
-            continue;
-        }
-        valid_command_args.push(tmp_command_arg);
-    }
 
     // execute command
-    match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
-        Ok(output) => {
-            command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
-        },
-        Err(e) => {
-            println!("{}", e);
+    match Command::new(check_command_executable_result.command)
+        .args(special_char_args_builder(command_execute_args_builder))
+        .output() {
+            Ok(output) => {
+                command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
+            },
+            Err(e) => {
+                println!("{}", e);
+            }
         }
-    }
 }
 
 fn check_command_executable(command: &str) -> CommandExecutableResult {
