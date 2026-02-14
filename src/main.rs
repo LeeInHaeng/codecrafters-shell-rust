@@ -13,11 +13,25 @@ enum CommandResult {
     #[default] CommandError
 }
 
+#[derive(PartialEq, Clone)]
+enum CommandOutput {
+    StdOut,
+    StdOutNewLine,
+    File,
+}
+
 #[derive(Default)]
 struct CommandExecutableResult {
     pub command: String,
     pub full_path: String,
     pub result: CommandResult,
+}
+
+#[derive(Default)]
+struct RedirectionArgsBuilderResult {
+    pub command_args: String,
+    pub output: String,
+    pub result: CommandResult
 }
 
 fn main() {
@@ -73,7 +87,7 @@ fn main() {
                 command_args_builder_param.push('"');
             }
 
-            command = command_args_builder(&command_args_builder_param);
+            command = special_char_args_builder(&command_args_builder_param);
 
             let Some(command_args_filter) = input_command.strip_prefix(&command_args_builder_param) else {
                 println!("command single quotes invalid");
@@ -119,6 +133,22 @@ fn main() {
     }
 }
 
+fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
+    if enum_output == CommandOutput::StdOut {
+        print!("{}", args);
+        return;
+    }
+
+    if enum_output == CommandOutput::StdOutNewLine {
+        println!("{}", args);
+        return;
+    }
+
+    if enum_output == CommandOutput::File {
+        let _ = fs::write(writer_output, args);
+    }
+}
+
 //// single quotes ///
 // 'hello    world'   :   hello    world  : 따옴표 안의 공백은 그대로 유지됩니다.
 // hello    world :   hello world : 연속된 공백은 따옴표로 묶지 않는 한 축소됩니다.
@@ -130,7 +160,7 @@ fn main() {
 // "hello""world" : helloworld
 // "hello" "world" : hello world
 // "shell's test" : shell's test
-fn command_args_builder(args: &str) -> String {
+fn special_char_args_builder(args: &str) -> String {
     let mut result = String::with_capacity(args.len());
     let mut is_quote_start = false;
     let mut is_double_quote = false;
@@ -218,8 +248,66 @@ fn command_args_builder(args: &str) -> String {
     result
 }
 
+fn is_redirection_args(args: &str) -> bool {
+    if args.contains(">") {
+        return true;
+    }
+    false
+}
+
+fn redirection_args_builder(args: &str) -> RedirectionArgsBuilderResult {
+    let mut result = RedirectionArgsBuilderResult::default();
+
+    let mut splited_redirection_str = ">";
+    if args.contains("1>") {
+        splited_redirection_str = "1>";
+    }
+
+    let mut splited_redirection_args:Vec<&str> = args.split(splited_redirection_str).collect();
+    let Some(output) = splited_redirection_args.pop() else {
+        println!("command args output error 1. args: {}", args);
+        return result;
+    };
+
+    result.output = output.trim().to_string();
+
+    let Some(command_args) = splited_redirection_args.first() else {
+        println!("command args output error 2. args: {}", args);
+        return result;
+    };
+
+    result.command_args = command_args.to_string();
+    result.result = CommandResult::Success;
+
+    result
+}
+
 fn command_echo(args: &str) {
-    println!("{}", command_args_builder(args));
+    let echo_args_builder;
+    let command_output_enum;
+    let writer_output;
+
+    if is_redirection_args(args) {
+        let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(args);
+        if redirection_args_builder_result.result != CommandResult::Success {
+            return;
+        }
+
+        echo_args_builder = redirection_args_builder_result.command_args;
+        command_output_enum = CommandOutput::File;
+        writer_output = redirection_args_builder_result.output;
+    } else {
+        echo_args_builder = args.to_string();
+        command_output_enum = CommandOutput::StdOutNewLine;
+        writer_output = "".to_string();
+    }
+
+    let echo_args_builder = special_char_args_builder(&echo_args_builder);
+    if echo_args_builder.is_empty() {
+        return;
+    }
+
+    command_output(command_output_enum, &echo_args_builder, &writer_output);
 }
 
 fn command_type(args: &str) {
@@ -261,15 +349,49 @@ fn command_cd(args: &str) {
 }
 
 fn command_cat(args: &str) {
-    let args_builder = command_args_builder(args);
-    let file_path_args = split_by_anchor_segments(&args_builder, "/tmp");
+    let cat_args_builder;
+    let command_output_enum;
+    let writer_output;
+    let is_redirection_args = is_redirection_args(args);
 
-    for file_path in file_path_args {
-        let Ok(file_contents) = fs::read_to_string(&file_path) else {
-            println!("command_cat file_path {}: No such file or directory", &file_path);
-            continue;
+    if is_redirection_args {
+        let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(args);
+        if redirection_args_builder_result.result != CommandResult::Success {
+            return;
+        }
+
+        cat_args_builder = redirection_args_builder_result.command_args;
+        command_output_enum = CommandOutput::File;
+        writer_output = redirection_args_builder_result.output;
+    } else {
+        cat_args_builder = args.to_string();
+        command_output_enum = CommandOutput::StdOut;
+        writer_output = "".to_string();
+    }
+
+    let cat_args_builder = special_char_args_builder(&cat_args_builder);
+    let file_path_args = split_by_anchor_segments(&cat_args_builder, "/tmp");
+
+    if file_path_args.len() == 0 {
+        let Ok(file_contents) = fs::read_to_string(&cat_args_builder) else {
+            command_output(CommandOutput::StdOutNewLine, &format!("cat: {}: No such file or directory", &cat_args_builder), "");
+            if is_redirection_args {
+                command_output(CommandOutput::File, "", &writer_output);
+            }
+            return;
         };
-        print!("{}", file_contents)
+        command_output(command_output_enum, &file_contents, &writer_output);
+    } else {
+        for file_path in file_path_args {
+            let Ok(file_contents) = fs::read_to_string(&file_path) else {
+                command_output(CommandOutput::StdOutNewLine, &format!("cat: {}: No such file or directory", &file_path), "");
+                if is_redirection_args {
+                    command_output(CommandOutput::File, "", &writer_output);
+                }
+                continue;
+            };
+            command_output(command_output_enum.clone(), &file_contents, &writer_output);
+        }
     }
 }
 
