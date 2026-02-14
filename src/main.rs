@@ -174,6 +174,7 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 // "example\"insidequotes"world\" : example"insidequotesworld"
 // \'\"world example\"\' : '"world example"'
 // "mixed\"quote'world'\\" : mixed"quote'world'\
+// "test  world"  "shell""script" : test  world shellscript"
 fn special_char_args_builder(args: &str) -> Vec<String> {
     let mut result = vec![];
 
@@ -356,7 +357,7 @@ fn command_echo(args: &str) {
         return;
     }
 
-    let echo_args_builder = echo_args_builder.join("");
+    let echo_args_builder = echo_args_builder.join(" ");
     command_output(command_output_enum, &echo_args_builder, &writer_output);
 }
 
