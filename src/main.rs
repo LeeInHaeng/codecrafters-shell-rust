@@ -440,7 +440,8 @@ fn command_execute(command: &str, command_args: &str) {
             continue;
         }
 
-        // 있는 path 인지 확인{
+        // 있는 path 인지 확인
+        println!("{}", command_arg);
         let path = Path::new(&command_arg);
         if false == path.exists() {
             println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
