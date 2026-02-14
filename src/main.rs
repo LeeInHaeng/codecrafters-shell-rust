@@ -393,8 +393,25 @@ fn command_execute(command: &str, command_args: &str) {
         writer_output = "".to_string();
     }
 
+    let command_execute_args_builder = command_execute_args_builder.trim();
+    let command_args_vec:Vec<&str> = command_execute_args_builder.split_whitespace().collect();
+    let mut valid_command_args:Vec<&str> = vec![];
+    // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
+    for command_arg in command_args_vec {
+        if command_arg.starts_with("-") {
+            valid_command_args.push(command_arg);
+            continue;
+        }
+        let path = Path::new(command_arg);
+        if false == path.exists() {
+            println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+            continue;
+        }
+        valid_command_args.push(command_arg);
+    }
+
     // execute command
-    match Command::new(check_command_executable_result.command).args(command_execute_args_builder.split_whitespace()).output() {
+    match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
         Ok(output) => {
             command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
         },
