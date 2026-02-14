@@ -407,17 +407,21 @@ fn command_execute(command: &str, command_args: &str) {
 
     // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
     for command_arg in command_args_vec {
-        if command_arg.trim().is_empty() {
+        let command_arg = command_arg.trim();
+
+        if command_arg.is_empty() {
             continue;
         }
 
         if command_arg.starts_with("-") {
-            valid_command_args.push(command_arg.trim().to_string());
+            valid_command_args.push(command_arg.to_string());
             continue;
         }
 
         let mut tmp_command_arg = String::new();
-        tmp_command_arg.push_str("/tmp");
+        if command_arg.starts_with("/") {
+            tmp_command_arg.push_str("/tmp");
+        }
         tmp_command_arg.push_str(command_arg);
 
         let path = Path::new(&tmp_command_arg);
