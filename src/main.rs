@@ -277,7 +277,7 @@ fn redirection_args_builder(args: &str) -> RedirectionArgsBuilderResult {
         return result;
     };
 
-    result.command_args = command_args.to_string();
+    result.command_args = command_args.trim().to_string();
     result.result = CommandResult::Success;
 
     result
