@@ -206,6 +206,16 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
             if char == '\\' {
                 is_ignore_backslash = true;
             }
+
+            if char == '\"' {
+                if is_quote_start {
+                    is_quote_start = false;
+                    is_double_quote = false;
+                } else {
+                    is_quote_start = true;
+                    is_double_quote = true;
+                }
+            }
             continue;
         }
 
