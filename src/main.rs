@@ -174,7 +174,8 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 // "example\"insidequotes"world\" : example"insidequotesworld"
 // \'\"world example\"\' : '"world example"'
 // "mixed\"quote'world'\\" : mixed"quote'world'\
-// "test  world"  "shell""script" : test  world shellscript"
+// "test  world"  "shell""script" : test  world shellscript
+// "script\"insidequotes"example\" : script"insidequotesexample"
 fn special_char_args_builder(args: &str) -> Vec<String> {
     let mut result = vec![];
 
@@ -240,8 +241,6 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
 
                 is_quote_start = false;
                 is_double_quote = false;
-                result.push(result_tmp);
-                result_tmp = String::with_capacity(args.len());
                 continue;
             } else {
                 is_quote_start = true;
