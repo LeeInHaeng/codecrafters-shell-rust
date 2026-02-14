@@ -378,6 +378,8 @@ fn command_execute(command: &str, command_args: &str) {
     let command_output_enum;
     let writer_output;
 
+    let command_args = &special_char_args_builder(command_args);
+
     if is_redirection_args(command_args) {
         let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
         if redirection_args_builder_result.result != CommandResult::Success {
@@ -394,10 +396,20 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     let command_execute_args_builder = command_execute_args_builder.trim();
-    let command_args_vec:Vec<&str> = command_execute_args_builder.split_whitespace().collect();
+    let command_args_vec:Vec<&str>;
+    if command.contains("cat") || command.contains("ls") {
+        command_args_vec = command_execute_args_builder.split("/tmp").collect()
+    } else {
+        command_args_vec = command_execute_args_builder.split_whitespace().collect();
+    }
+
     let mut valid_command_args:Vec<&str> = vec![];
     // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
     for command_arg in command_args_vec {
+        if command_arg.trim().is_empty() {
+            continue;
+        }
+
         if command_arg.starts_with("-") {
             valid_command_args.push(command_arg);
             continue;
