@@ -135,6 +135,10 @@ fn main() {
 }
 
 fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
+    if args.is_empty() {
+        return;
+    }
+
     if enum_output == CommandOutput::StdOut {
         print!("{}", args);
         return;
