@@ -357,7 +357,11 @@ fn command_echo(args: &str) {
         }
 
         echo_args_builder = redirection_args_builder_result.command_args;
-        command_output_enum = CommandOutput::File;
+        if redirection_args_builder_result.redirect == "2>" {
+            command_output_enum = CommandOutput::StdOut;    
+        } else {
+            command_output_enum = CommandOutput::File;
+        }
         writer_output = redirection_args_builder_result.output;
     } else {
         echo_args_builder = args.to_string();
