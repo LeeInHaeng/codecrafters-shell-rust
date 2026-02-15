@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use is_executable::IsExecutable;
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
-const COMMAND_PATH: [&str; 2] = ["cat", "ls"];
+const COMMAND_PATH: [&str; 4] = ["cat", "ls", "cat.exe", "ls.exe"];
 
 #[derive(PartialEq, Default)]
 enum CommandResult {
@@ -125,9 +125,7 @@ fn main() {
                     "echo" => command_echo(&command_args),
                     "type" => command_type(&command_args),
                     "cd" => command_cd(&command_args),
-                    // 해당 challenge 에서 cat 명령어가 기본적으로 있다고 하지만
-                    // 윈도우 환경 에서 정상 인식이 안되기 때문에 별도 command 로 구현
-                    // 기본 cat 은 /tmp 하위로 기본 셋팅 해둔다.
+                    // cat 과 ls 는 구현이 아닌 외부에 이미 있는 command 를 사용 하게끔 한다
                     "cat" => command_cat(&command_args),
                     "ls" => command_ls(&command_args),
                     _ => command_execute(command, &command_args)
@@ -432,6 +430,7 @@ fn command_execute(command: &str, command_args: &str) {
     let mut command_output_enum;
     let writer_output;
     let mut is_error_redirect = false;
+    let mut is_error = false;
 
     if is_redirection_args(command_args) {
         let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
@@ -475,6 +474,7 @@ fn command_execute(command: &str, command_args: &str) {
             if false == path.exists() {
                 let error_message = format!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
                 command_output(command_output_enum.clone(), &error_message, &writer_output);
+                is_error = true;
                 continue;
             }
         }
@@ -482,8 +482,13 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(command_arg.to_string());
     }
 
+    // 2> 인 error redirect 인데, error 발생시 이후 command 수행 X
+    if is_error_redirect && is_error {
+        return;
+    }
+
     if is_error_redirect {
-        command_output_enum = CommandOutput::StdOutNewLine;
+        command_output_enum = CommandOutput::StdOut;
     }
 
     // execute command
