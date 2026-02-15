@@ -5,7 +5,7 @@ use std::io::{self, Write};
 use is_executable::IsExecutable;
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
-const COMMAND_PATH: [&str; 2] = ["cd", "ls"];
+const COMMAND_PATH: [&str; 2] = ["cat", "ls"];
 
 #[derive(PartialEq, Default)]
 enum CommandResult {
