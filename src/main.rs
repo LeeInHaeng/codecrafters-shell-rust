@@ -136,16 +136,12 @@ fn main() {
 }
 
 fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
-    if args.is_empty() {
-        return;
-    }
-
-    if enum_output == CommandOutput::StdOut {
+    if enum_output == CommandOutput::StdOut && false == args.is_empty() {
         print!("{}", args);
         return;
     }
 
-    if enum_output == CommandOutput::StdOutNewLine {
+    if enum_output == CommandOutput::StdOutNewLine && false == args.is_empty() {
         println!("{}", args);
         return;
     }
