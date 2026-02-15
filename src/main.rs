@@ -433,7 +433,6 @@ fn command_execute(command: &str, command_args: &str) {
     let mut command_output_enum;
     let writer_output;
     let mut is_error_redirect = false;
-    let mut is_error = false;
 
     if is_redirection_args(command_args) {
         let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
@@ -477,7 +476,6 @@ fn command_execute(command: &str, command_args: &str) {
             if false == path.exists() {
                 let error_message = format!("{}: {}: No such file or directory\r\n", check_command_executable_result.command, command_arg);
                 command_output(command_output_enum.clone(), &error_message, &writer_output);
-                is_error = true;
                 continue;
             }
         }
@@ -485,25 +483,20 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(command_arg.to_string());
     }
 
-    // 2> 인 error redirect 인데
+    // 2> 인 error redirect 이면 command output 은 StdOutput 으로 변경
     if is_error_redirect {
         command_output_enum = CommandOutput::StdOut;
-        // error 발생시 이후 command 수행 X
-         if is_error {
-            return;
-        // 파일은 생성 필요
-         } else {
-            command_output(CommandOutput::File, "", &writer_output);
-         }
     }
 
     // execute command
-    match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
-        Ok(output) => {
-            command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
-        },
-        Err(e) => {
-            println!("{}", e);
+    if false == valid_command_args.is_empty() {
+        match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
+            Ok(output) => {
+                command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
+            },
+            Err(e) => {
+                println!("{}", e);
+            }
         }
     }
 }
