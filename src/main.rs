@@ -5,6 +5,7 @@ use std::io::{self, Write};
 use is_executable::IsExecutable;
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
+const COMMAND_PATH: [&str; 2] = ["cd", "ls"];
 
 #[derive(PartialEq, Default)]
 enum CommandResult {
@@ -455,11 +456,13 @@ fn command_execute(command: &str, command_args: &str) {
             continue;
         }
 
-        // 있는 path 인지 확인
-        let path = Path::new(&command_arg);
-        if false == path.exists() {
-            println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
-            continue;
+        // 명확하게 path 가 들어오는 command 인 경우 있는 path 인지 확인
+        if COMMAND_PATH.contains(&command) {
+            let path = Path::new(&command_arg);
+            if false == path.exists() {
+                println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+                continue;
+            }
         }
 
         valid_command_args.push(command_arg.to_string());
