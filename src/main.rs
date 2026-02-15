@@ -176,6 +176,7 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 // "mixed\"quote'world'\\" : mixed"quote'world'\
 // "test  world"  "shell""script" : test  world shellscript
 // "script\"insidequotes"example\" : script"insidequotesexample"
+// /tmp/dog/"number 41" /tmp/dog/"doublequote \" 22" /tmp/dog/"backslash \\ 82" : [0] /tmp/dog/number 41 , [1] /tmp/dog/doublequote " 22 , [2] /tmp/dog/backslash \ 82
 fn special_char_args_builder(args: &str) -> Vec<String> {
     let mut result = vec![];
 
@@ -215,7 +216,11 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
             }
 
             if char == '\'' || char == '\"' {
-                is_ignore_result_push = true;
+                if is_ignore_backslash {
+                    is_ignore_result_push = false;
+                } else {
+                    is_ignore_result_push = true;
+                }
             }
             continue;
         }
@@ -241,6 +246,7 @@ fn special_char_args_builder(args: &str) -> Vec<String> {
 
                 is_quote_start = false;
                 is_double_quote = false;
+                is_ignore_result_push = false;
                 continue;
             } else {
                 is_quote_start = true;
