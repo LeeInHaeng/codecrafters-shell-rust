@@ -488,8 +488,11 @@ fn command_execute(command: &str, command_args: &str) {
         command_output_enum = CommandOutput::StdOut;
     }
 
+    // valid_command_args 요소중 "-" 로 시작하는 옵션 외에 있을 경우만 실행
+    let is_command_execute = valid_command_args.iter().any(|v| false == v.starts_with("-"));
+
     // execute command
-    if false == valid_command_args.is_empty() {
+    if is_command_execute {
         match Command::new(check_command_executable_result.command).args(valid_command_args).output() {
             Ok(output) => {
                 command_output(command_output_enum, str::from_utf8(&output.stdout).unwrap(), &writer_output);
