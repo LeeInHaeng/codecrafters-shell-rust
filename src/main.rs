@@ -472,7 +472,7 @@ fn command_execute(command: &str, command_args: &str) {
         if COMMAND_PATH.contains(&command) {
             let path = Path::new(&command_arg);
             if false == path.exists() {
-                let error_message = format!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+                let error_message = format!("{}: {}: No such file or directory\r\n", check_command_executable_result.command, command_arg);
                 command_output(command_output_enum.clone(), &error_message, &writer_output);
                 is_error = true;
                 continue;
