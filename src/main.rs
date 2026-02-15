@@ -357,12 +357,15 @@ fn command_echo(args: &str) {
         }
 
         echo_args_builder = redirection_args_builder_result.command_args;
+        writer_output = redirection_args_builder_result.output;
+
         if redirection_args_builder_result.redirect == "2>" {
-            command_output_enum = CommandOutput::StdOut;    
+            command_output_enum = CommandOutput::StdOut;
+            // 파일 없더라도 생성 필요
+            command_output(CommandOutput::File, "", &writer_output);
         } else {
             command_output_enum = CommandOutput::File;
         }
-        writer_output = redirection_args_builder_result.output;
     } else {
         echo_args_builder = args.to_string();
         command_output_enum = CommandOutput::StdOutNewLine;
@@ -486,13 +489,16 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(command_arg.to_string());
     }
 
-    // 2> 인 error redirect 인데, error 발생시 이후 command 수행 X
-    if is_error_redirect && is_error {
-        return;
-    }
-
+    // 2> 인 error redirect 인데
     if is_error_redirect {
         command_output_enum = CommandOutput::StdOut;
+        // error 발생시 이후 command 수행 X
+         if is_error {
+            return;
+        // 파일은 생성 필요
+         } else {
+            command_output(CommandOutput::File, "", &writer_output);
+         }
     }
 
     // execute command
