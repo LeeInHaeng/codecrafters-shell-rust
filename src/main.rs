@@ -32,6 +32,7 @@ struct CommandExecutableResult {
 struct RedirectionArgsBuilderResult {
     pub command_args: String,
     pub output: String,
+    pub redirect: String,
     pub result: CommandResult
 }
 
@@ -311,9 +312,17 @@ fn is_redirection_args(args: &str) -> bool {
 fn redirection_args_builder(args: &str) -> RedirectionArgsBuilderResult {
     let mut result = RedirectionArgsBuilderResult::default();
 
-    let mut splited_redirection_str = ">";
+    let splited_redirection_str;
+
     if args.contains("1>") {
         splited_redirection_str = "1>";
+        result.redirect = "1>".to_string();
+    } else if args.contains("2>") {
+        splited_redirection_str = "2>";
+        result.redirect = "2>".to_string();
+    } else {
+        splited_redirection_str = ">";
+        result.redirect = ">".to_string();
     }
 
     let mut splited_redirection_args:Vec<&str> = args.split(splited_redirection_str).collect();
@@ -420,8 +429,9 @@ fn command_execute(command: &str, command_args: &str) {
     }
 
     let command_execute_args_builder;
-    let command_output_enum;
+    let mut command_output_enum;
     let writer_output;
+    let mut is_error_redirect = false;
 
     if is_redirection_args(command_args) {
         let redirection_args_builder_result: RedirectionArgsBuilderResult = redirection_args_builder(command_args);
@@ -432,6 +442,9 @@ fn command_execute(command: &str, command_args: &str) {
         command_execute_args_builder = redirection_args_builder_result.command_args;
         command_output_enum = CommandOutput::File;
         writer_output = redirection_args_builder_result.output;
+        if redirection_args_builder_result.redirect == "2>" {
+            is_error_redirect = true;
+        }
     } else {
         command_execute_args_builder = command_args.to_string();
         command_output_enum = CommandOutput::StdOut;
@@ -460,12 +473,17 @@ fn command_execute(command: &str, command_args: &str) {
         if COMMAND_PATH.contains(&command) {
             let path = Path::new(&command_arg);
             if false == path.exists() {
-                println!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+                let error_message = format!("{}: {}: No such file or directory", check_command_executable_result.command, command_arg);
+                command_output(command_output_enum.clone(), &error_message, &writer_output);
                 continue;
             }
         }
 
         valid_command_args.push(command_arg.to_string());
+    }
+
+    if is_error_redirect {
+        command_output_enum = CommandOutput::StdOutNewLine;
     }
 
     // execute command
