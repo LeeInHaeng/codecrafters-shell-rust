@@ -443,6 +443,7 @@ fn command_execute(command: &str, command_args: &str) {
         command_execute_args_builder = redirection_args_builder_result.command_args;
         command_output_enum = CommandOutput::File;
         writer_output = redirection_args_builder_result.output;
+
         if redirection_args_builder_result.redirect == "2>" {
             is_error_redirect = true;
         }
@@ -456,6 +457,7 @@ fn command_execute(command: &str, command_args: &str) {
     let command_args_vec = special_char_args_builder(command_execute_args_builder);
 
     let mut valid_command_args:Vec<String> = vec![];
+    let mut error_messages:Vec<String> = vec![];
 
     for command_arg in command_args_vec {
         let command_arg = command_arg.trim();
@@ -475,7 +477,7 @@ fn command_execute(command: &str, command_args: &str) {
             let path = Path::new(&command_arg);
             if false == path.exists() {
                 let error_message = format!("{}: {}: No such file or directory\r\n", check_command_executable_result.command, command_arg);
-                command_output(command_output_enum.clone(), &error_message, &writer_output);
+                error_messages.push(error_message);
                 continue;
             }
         }
@@ -483,8 +485,11 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(command_arg.to_string());
     }
 
-    // 2> 인 error redirect 이면 command output 은 StdOutput 으로 변경
+    // 2> 인 경우
+    // 에러 여부와 상관 없이 파일이 없으면 생성한다. 에러가 있으면 이 내용을 기록 한다.
     if is_error_redirect {
+        command_output(CommandOutput::File, &error_messages.join(""), &writer_output);
+        // 성공된 표준 출력은 터미널에 그대로 표시 한다.
         command_output_enum = CommandOutput::StdOut;
     }
 
