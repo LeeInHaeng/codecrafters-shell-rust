@@ -521,9 +521,9 @@ fn command_execute(command: &str, command_args: &str) {
         command_output(CommandOutput::File, error_message, &writer_output);
         // 성공된 표준 출력은 터미널에 그대로 표시 한다.
         command_output_enum = CommandOutput::StdOut;
-    // 2> 가 아닌데 에러가 있을 경우 기존의 command_output_enum 를 따름
+    // 2> 가 아닌데 에러가 있을 경우 표준 출력
     } else if false == error_message.is_empty() {
-        command_output(command_output_enum.clone(), error_message, &writer_output);
+        command_output(CommandOutput::StdOut, error_message, &writer_output);
     }
 
     // valid_command_args 요소중 "-" 로 시작하는 옵션 외에 있을 경우만 실행
