@@ -157,7 +157,6 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
 
     if enum_output == CommandOutput::FileAppend {
         match OpenOptions::new()
-        .write(true)
         .append(true)
         .create(true)
         .open(writer_output) {
@@ -467,7 +466,7 @@ fn command_execute(command: &str, command_args: &str) {
         }
 
         command_execute_args_builder = redirection_args_builder_result.command_args;
-        if redirection_args_builder_result.output == "1>>" || redirection_args_builder_result.output == ">>" {
+        if redirection_args_builder_result.redirect == "1>>" || redirection_args_builder_result.redirect == ">>" {
             command_output_enum = CommandOutput::FileAppend
         } else {
             command_output_enum = CommandOutput::File;
@@ -517,14 +516,11 @@ fn command_execute(command: &str, command_args: &str) {
 
     // 2> 인 경우
     // 에러 여부와 상관 없이 파일이 없으면 생성한다. 에러가 있으면 이 내용을 기록 한다.
-
     let error_message = &error_messages.join("");
     if is_error_redirect {
         command_output(CommandOutput::File, error_message, &writer_output);
         // 성공된 표준 출력은 터미널에 그대로 표시 한다.
         command_output_enum = CommandOutput::StdOut;
-    } else {
-        command_output(CommandOutput::StdOut, error_message, &writer_output);
     }
 
     // valid_command_args 요소중 "-" 로 시작하는 옵션 외에 있을 경우만 실행
