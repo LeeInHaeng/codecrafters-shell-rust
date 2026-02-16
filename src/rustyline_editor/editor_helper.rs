@@ -30,8 +30,10 @@ impl Completer for MyEditorHelper {
             // pair 로 변경
             .map(|filtered_command| Pair
                 {
+                    // 변경할 문자열
                     display: filtered_command.to_string(),
-                    replacement: filtered_command.to_string() 
+                    // 변경해서 보여줄때는 공백 추가
+                    replacement: format!("{} ", filtered_command)
                 })
             .collect();
 
