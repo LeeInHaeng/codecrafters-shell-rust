@@ -45,10 +45,7 @@ struct RedirectionArgsBuilderResult {
 fn main() {
     let mut readline_editor: Editor<MyEditorHelper, _> = Editor::new().expect("rustyline editor fail");
 
-    let mut all_commands = COMMAND.to_vec();
-    all_commands.extend_from_slice(&COMMAND_PATH);
-
-    let my_editor_helper = MyEditorHelper::new(all_commands);
+    let my_editor_helper = MyEditorHelper::new(get_all_executable_command());
     readline_editor.set_helper(Some(my_editor_helper));
 
     loop {
@@ -157,6 +154,52 @@ fn main() {
             }
         };
     }
+}
+
+fn get_all_executable_command() -> Vec<String> {
+    let mut result: Vec<String> = COMMAND.into_iter().map(String::from).collect();
+
+    // get PATH
+    let Some(paths) = env::var_os("PATH") else {
+        println!("var os PATH not found");
+        return result;
+    };
+
+    for path in env::split_paths(&paths) {
+        // 환경변수 하위의 전체 dir
+        let Ok(read_dir) = fs::read_dir(&path) else {
+            continue;
+        };
+
+        for dir in read_dir {
+            let sub_path = match dir {
+                Ok(v) => v.path(),
+                Err(_) => continue
+            };
+            let full = path.join(&sub_path);
+
+            // Check if a file with the command name exists.
+            if fs::metadata(&full).is_err() {
+                continue;
+            }
+
+            if false == full.is_executable() {
+                continue;
+            }
+
+            let Some(execute_file_name) = sub_path.file_name() else {
+                continue;
+            };
+            let Some(execute_file_name) = execute_file_name.to_str() else {
+                continue;
+            };
+
+            result.push(execute_file_name.to_string());
+        }
+
+    }
+
+    result
 }
 
 fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
