@@ -528,6 +528,8 @@ fn command_execute(command: &str, command_args: &str) {
         // 2> 혹은 2>> 인 경우 에러 내용을 기록
         if is_error_redirect {
             command_output(command_output_enum.clone(), error_message, &writer_output);
+            // 성공하는 args 도 있을 경우 표준 출력을 위해 StdOutNewLine 으로 변경
+            command_output_enum = CommandOutput::StdOutNewLine;
         // 2> 와 2>> 가 아닐 경우 에러를 표준 출력
         } else {
             command_output(CommandOutput::StdOut, error_message, &writer_output);
