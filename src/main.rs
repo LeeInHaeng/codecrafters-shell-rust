@@ -1,4 +1,4 @@
-use std::{borrow::Cow, env, fs, path::Path, process::Command};
+use std::{borrow::Cow, env, fs::{self, OpenOptions}, path::Path, process::Command};
 #[allow(unused_imports)]
 use std::io::{self, Write};
 
@@ -19,6 +19,7 @@ enum CommandOutput {
     StdOut,
     StdOutNewLine,
     File,
+    FileAppend,
 }
 
 #[derive(Default)]
@@ -149,9 +150,26 @@ fn command_output(enum_output: CommandOutput, args: &str, writer_output: &str) {
     if enum_output == CommandOutput::File {
         match fs::write(writer_output, args) {
             Ok(_) => {},
-            Err(e) => println!("file_write error. path: {}, e: {}", writer_output, e)
+            Err(e) => println!("file write error. path: {}, e: {}", writer_output, e)
         };
-        
+        return;
+    }
+
+    if enum_output == CommandOutput::FileAppend {
+        match OpenOptions::new()
+        .write(true)
+        .append(true)
+        .create(true)
+        .open(writer_output) {
+            Ok(mut f) => {
+                match write!(f, "{}", args) {
+                    Ok(_) => {},
+                    Err(e) => println!("file contents write error. path: {}, e: {}", writer_output, e)
+                }
+            },
+            Err(e) => println!("file write error. path: {}, e: {}", writer_output, e)
+        };
+        return;
     }
 }
 
@@ -308,7 +326,13 @@ fn redirection_args_builder(args: &str) -> RedirectionArgsBuilderResult {
 
     let splited_redirection_str;
 
-    if args.contains("1>") {
+    if args.contains("1>>") {
+        splited_redirection_str = "1>>";
+        result.redirect = "1>>".to_string();
+    } else if args.contains(">>") {
+        splited_redirection_str = ">>";
+        result.redirect = ">>".to_string();
+    } else if args.contains("1>") {
         splited_redirection_str = "1>";
         result.redirect = "1>".to_string();
     } else if args.contains("2>") {
@@ -359,6 +383,8 @@ fn command_echo(args: &str) {
             command_output_enum = CommandOutput::StdOut;
             // 파일 없더라도 생성 필요
             command_output(CommandOutput::File, "", &writer_output);
+        } else if redirection_args_builder_result.redirect == ">>" || redirection_args_builder_result.redirect == "1>>" {
+            command_output_enum = CommandOutput::FileAppend;
         } else {
             command_output_enum = CommandOutput::File;
         }
@@ -441,7 +467,11 @@ fn command_execute(command: &str, command_args: &str) {
         }
 
         command_execute_args_builder = redirection_args_builder_result.command_args;
-        command_output_enum = CommandOutput::File;
+        if redirection_args_builder_result.output == "1>>" || redirection_args_builder_result.output == ">>" {
+            command_output_enum = CommandOutput::FileAppend
+        } else {
+            command_output_enum = CommandOutput::File;
+        }
         writer_output = redirection_args_builder_result.output;
 
         if redirection_args_builder_result.redirect == "2>" {
