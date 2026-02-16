@@ -514,13 +514,16 @@ fn command_execute(command: &str, command_args: &str) {
         valid_command_args.push(command_arg.to_string());
     }
 
-    // 2> 인 경우
-    // 에러 여부와 상관 없이 파일이 없으면 생성한다. 에러가 있으면 이 내용을 기록 한다.
     let error_message = &error_messages.join("");
+    // 2> 인 경우
     if is_error_redirect {
+        // 에러 여부와 상관 없이 파일이 없으면 생성한다. 에러가 있으면 이 내용을 기록 한다.
         command_output(CommandOutput::File, error_message, &writer_output);
         // 성공된 표준 출력은 터미널에 그대로 표시 한다.
         command_output_enum = CommandOutput::StdOut;
+    // 2> 가 아닌데 에러가 있을 경우 기존의 command_output_enum 를 따름
+    } else if false == error_message.is_empty() {
+        command_output(command_output_enum.clone(), error_message, &writer_output);
     }
 
     // valid_command_args 요소중 "-" 로 시작하는 옵션 외에 있을 경우만 실행
