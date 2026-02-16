@@ -3,6 +3,11 @@ use std::{borrow::Cow, env, fs::{self, OpenOptions}, path::Path, process::Comman
 use std::io::{self, Write};
 
 use is_executable::IsExecutable;
+use rustyline::{Editor, error::ReadlineError};
+
+mod rustyline_editor;
+use crate::rustyline_editor::editor_helper::MyEditorHelper;
+
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
 const COMMAND_PATH: [&str; 4] = ["cat", "ls", "cat.exe", "ls.exe"];
@@ -38,16 +43,34 @@ struct RedirectionArgsBuilderResult {
 }
 
 fn main() {
+    let mut readline_editor: Editor<MyEditorHelper, _> = Editor::new().expect("rustyline editor fail");
+
+    let mut all_commands = COMMAND.to_vec();
+    all_commands.extend_from_slice(&COMMAND_PATH);
+
+    let my_editor_helper = MyEditorHelper::new(all_commands);
+    readline_editor.set_helper(Some(my_editor_helper));
+
     loop {
-        print!("$ ");
-        io::stdout().flush().unwrap();
-
-        // owned
-        let mut input = String::new();
-
-        io::stdin().read_line(&mut input).unwrap();
+        let readline = readline_editor.readline("$ ");
         
-        let input_command = input.trim();
+        let input_command: String = match readline {
+            Ok(line) => {
+                line
+            }
+            Err(ReadlineError::Interrupted) => {
+                println!("Ctrl-C");
+                break;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("Ctrl-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
+            }
+        };
 
         // command 는 command_args_builder 함수를 태워야 되기 때문에 다 owned 로 한다.
         let mut command = String::new();
