@@ -3,10 +3,11 @@ use std::{borrow::Cow, env, fs::{self, OpenOptions}, path::Path, process::Comman
 use std::io::{self, Write};
 
 use is_executable::IsExecutable;
-use rustyline::{Editor, error::ReadlineError};
+use rustyline::{Editor, EventHandler, KeyCode, KeyEvent, Modifiers, error::ReadlineError};
+
+use crate::rustyline_editor::tab_handler::MyTabHandler;
 
 mod rustyline_editor;
-use crate::rustyline_editor::editor_helper::MyEditorHelper;
 
 
 const COMMAND: [&str; 5]= ["exit", "echo", "type", "pwd", "cd"];
@@ -19,7 +20,7 @@ enum CommandResult {
     #[default] CommandError
 }
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Copy)]
 enum CommandOutput {
     StdOut,
     StdOutNewLine,
@@ -43,10 +44,12 @@ struct RedirectionArgsBuilderResult {
 }
 
 fn main() {
-    let mut readline_editor: Editor<MyEditorHelper, _> = Editor::new().expect("rustyline editor fail");
+    let mut readline_editor: Editor<(), _> = Editor::new().expect("rustyline editor fail");
 
-    let my_editor_helper = MyEditorHelper::new(get_all_executable_command());
-    readline_editor.set_helper(Some(my_editor_helper));
+    {
+        let my_tab_handler = MyTabHandler::new(get_all_executable_command());
+        readline_editor.bind_sequence(KeyEvent(KeyCode::Tab, Modifiers::NONE), EventHandler::Conditional(Box::new(my_tab_handler)));
+    }
 
     loop {
         let readline = readline_editor.readline("$ ");
@@ -176,16 +179,19 @@ fn get_all_executable_command() -> Vec<String> {
                 Ok(v) => v.path(),
                 Err(_) => continue
             };
-            let full = path.join(&sub_path);
 
-            // Check if a file with the command name exists.
-            if fs::metadata(&full).is_err() {
-                continue;
-            }
+            {
+                let full = path.join(&sub_path);
 
-            // 실행 가능한 경로인지 체크
-            if false == full.is_executable() {
-                continue;
+                // Check if a file with the command name exists.
+                if fs::metadata(&full).is_err() {
+                    continue;
+                }
+
+                // 실행 가능한 경로인지 체크
+                if false == full.is_executable() {
+                    continue;
+                }
             }
 
             // 환경변수 full path 제거된 맨 마지막 실행파일 이름만 따로 추출
@@ -554,56 +560,59 @@ fn command_execute(command: &str, command_args: &str) {
         }
 
         // redirection 은 내용 상관 없이 일단 파일 생성
-        command_output(command_output_enum.clone(), "", &writer_output);
+        command_output(command_output_enum, "", &writer_output);
     } else {
         command_execute_args_builder = command_args.to_string();
         command_output_enum = CommandOutput::StdOut;
         writer_output = "".to_string();
     }
 
-    let command_execute_args_builder = command_execute_args_builder.trim();
-    let command_args_vec = special_char_args_builder(command_execute_args_builder);
-
     let mut valid_command_args:Vec<String> = vec![];
-    let mut error_messages:Vec<String> = vec![];
 
-    for command_arg in command_args_vec {
-        let command_arg = command_arg.trim();
+    {
+        let command_args_vec = special_char_args_builder(command_execute_args_builder.trim());
+        let mut error_messages:Vec<String> = vec![];
 
-        if command_arg.is_empty() {
-            continue;
-        }
+        for command_arg in command_args_vec {
+            let command_arg = command_arg.trim();
 
-        // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
-        if command_arg.starts_with("-") {
-            valid_command_args.push(command_arg.to_string());
-            continue;
-        }
-
-        // 명확하게 path 가 들어오는 command 인 경우 있는 path 인지 확인
-        if COMMAND_PATH.contains(&command) {
-            let path = Path::new(&command_arg);
-            if false == path.exists() {
-                let error_message = format!("{}: {}: No such file or directory\r\n", check_command_executable_result.command, command_arg);
-                error_messages.push(error_message);
+            if command_arg.is_empty() {
                 continue;
             }
+
+            // 하이푼이 붙은 옵션이면 무시, 옵션이 아니면 경로 존재 하는지 확인
+            if command_arg.starts_with("-") {
+                valid_command_args.push(command_arg.to_string());
+                continue;
+            }
+
+            // 명확하게 path 가 들어오는 command 인 경우 있는 path 인지 확인
+            if COMMAND_PATH.contains(&command) {
+                let path = Path::new(&command_arg);
+                if false == path.exists() {
+                    let error_message = format!("{}: {}: No such file or directory\r\n", check_command_executable_result.command, command_arg);
+                    error_messages.push(error_message);
+                    continue;
+                }
+            }
+
+            valid_command_args.push(command_arg.to_string());
         }
 
-        valid_command_args.push(command_arg.to_string());
-    }
-
-    let error_message = &error_messages.join("");
-    // 에러가 있는 경우
-    if false == error_message.is_empty() {
-        // 2> 혹은 2>> 인 경우 에러 내용을 기록
-        if is_error_redirect {
-            command_output(command_output_enum.clone(), error_message, &writer_output);
-            // 성공하는 args 도 섞여 있을 수 있기 때문에 표준 출력을 위해 StdOutNewLine 으로 변경
-            command_output_enum = CommandOutput::StdOut;
-        // 2> 와 2>> 가 아닐 경우 에러를 표준 출력
-        } else {
-            command_output(CommandOutput::StdOut, error_message, &writer_output);
+        {
+            let error_message = &error_messages.join("");
+            // 에러가 있는 경우
+            if false == error_message.is_empty() {
+                // 2> 혹은 2>> 인 경우 에러 내용을 기록
+                if is_error_redirect {
+                    command_output(command_output_enum, error_message, &writer_output);
+                    // 성공하는 args 도 섞여 있을 수 있기 때문에 표준 출력을 위해 StdOutNewLine 으로 변경
+                    command_output_enum = CommandOutput::StdOut;
+                // 2> 와 2>> 가 아닐 경우 에러를 표준 출력
+                } else {
+                    command_output(CommandOutput::StdOut, error_message, &writer_output);
+                }
+            }
         }
     }
 
