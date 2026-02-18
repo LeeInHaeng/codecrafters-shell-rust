@@ -46,8 +46,10 @@ impl Completer for MyEditorHelper {
                 .collect();
         }
 
+        if filtered_commands.len() <= 0 {
+            return Ok((0, vec![]));
         // 실행 가능한 명령어가 정확히 1개라면 그걸로 변환해서 반환
-        if filtered_commands.iter().count() == 0 {
+        } else if filtered_commands.len() == 1 {
             let result: Vec<Pair> = filtered_commands
                 .iter()
                 .map(|c| Pair
