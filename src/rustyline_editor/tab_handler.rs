@@ -2,19 +2,19 @@ use std::{io::{self, Write}, sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}}}
 
 use rustyline::{Cmd, ConditionalEventHandler, Event, EventContext, RepeatCount};
 
-#[derive(Clone, Debug, Default)]
+#[derive(Debug, Default)]
 pub struct MyTabHandler {
     commands: Vec<String>,
-    last_was_tab: Arc<AtomicBool>, // complete 가 &self(불변 참조) 여서 AtomicBool 로 (EventHandler 가 Send + Sync 여서 Cell 사용 불가능)
-    filtered_commands: Arc<Mutex<Vec<String>>>, // complete 가 &self(불변 참조) 여서 Mutex 로 (EventHandler 가 Send + Sync 여서 RefCell 사용 불가능)
+    last_was_tab: AtomicBool, // complete 가 &self(불변 참조) 여서 AtomicBool 로 (EventHandler 가 Send + Sync 여서 Cell 사용 불가능)
+    filtered_commands: Mutex<Vec<String>>, // complete 가 &self(불변 참조) 여서 Mutex 로 (EventHandler 가 Send + Sync 여서 RefCell 사용 불가능)
 }
 
 impl MyTabHandler {
     pub fn new(commands: impl IntoIterator<Item = impl Into<String>>) -> Self {
         Self {
             commands: commands.into_iter().map(Into::into).collect(),
-            last_was_tab: Arc::new(AtomicBool::new(false)),
-            filtered_commands: Arc::new(vec![].into())
+            last_was_tab: AtomicBool::new(false),
+            filtered_commands: vec![].into()
         }
     }
 
