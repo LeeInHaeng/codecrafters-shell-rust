@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
 
-use rustyline::{Cmd, ConditionalEventHandler, Event, EventContext, KeyEvent, Movement, RepeatCount};
+use rustyline::{Cmd, ConditionalEventHandler, Event, EventContext, RepeatCount};
 
 #[derive(Clone, Debug, Default)]
 pub struct MyTabHandler {
@@ -45,7 +45,7 @@ impl MyTabHandler {
 impl ConditionalEventHandler for MyTabHandler {
     fn handle(
         &self,
-        evt: &Event,
+        _evt: &Event,
         _n: RepeatCount,
         _positive: bool,
         ctx: &EventContext,
