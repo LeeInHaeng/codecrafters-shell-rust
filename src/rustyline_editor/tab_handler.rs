@@ -74,7 +74,10 @@ impl ConditionalEventHandler for MyTabHandler {
         self.filtered_commands.lock().unwrap().clear();
 
         if filtered_commands.len() <= 0 {
-            return None;
+            // bell 울림
+            print!("\x07");
+            io::stdout().flush().ok();
+            return Some(Cmd::Noop);
 
         // 실행 가능한 명령어가 정확히 1개라면 그걸로 변환해서 반환
         } else if filtered_commands.len() == 1 {
