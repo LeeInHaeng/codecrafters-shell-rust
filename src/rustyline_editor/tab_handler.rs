@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}};
+use std::{io::{self, Write}, sync::{Arc, Mutex, atomic::{AtomicBool, Ordering}}};
 
 use rustyline::{Cmd, ConditionalEventHandler, Event, EventContext, RepeatCount};
 
@@ -110,8 +110,10 @@ impl ConditionalEventHandler for MyTabHandler {
                     // 이전 탭 눌렀음 true 로 변경
                     self.last_was_tab.store(true, Ordering::Relaxed);
 
-                    // 이전 line 유지
-                    return Some(Cmd::Repaint);
+                    // bell 울림
+                    print!("\x07");
+                    io::stdout().flush().ok();
+                    return Some(Cmd::Noop);
                 } else {
                     // line 에서 추가할 부분만 뒤쪽에 추가
                     let result = longest_common_prefix[line.len()..].to_string();
