@@ -183,10 +183,12 @@ fn get_all_executable_command() -> Vec<String> {
                 continue;
             }
 
+            // 실행 가능한 경로인지 체크
             if false == full.is_executable() {
                 continue;
             }
 
+            // 환경변수 full path 제거된 맨 마지막 실행파일 이름만 따로 추출
             let Some(execute_file_name) = sub_path.file_name() else {
                 continue;
             };
@@ -198,6 +200,9 @@ fn get_all_executable_command() -> Vec<String> {
         }
 
     }
+
+    result.sort();
+    result.dedup();
 
     result
 }
